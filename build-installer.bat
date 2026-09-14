@@ -3,7 +3,7 @@ echo ========================================================
 echo   Compiling Othrys Windows Release & Installer Setup
 echo ========================================================
 
-cd /d %~dp0vpsmanager
+cd /d %~dp0othrys
 echo [1/3] Building Flutter Windows Release...
 call flutter build windows --release
 if %ERRORLEVEL% NEQ 0 (

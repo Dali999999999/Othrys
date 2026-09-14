@@ -14,7 +14,7 @@
 [![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture%20%2B%20Riverpod-blueviolet?style=flat-square)](https://riverpod.dev)
 [![Security](https://img.shields.io/badge/Security-AES--256--GCM%20Vault%20%2B%20TOFU-10B981?style=flat-square)](#-security-architecture)
 [![Code Quality](https://img.shields.io/badge/Lint-0%20warnings-10B981?style=flat-square)](#-code-standards--engineering-rigor)
-[![Tests](https://img.shields.io/badge/Tests-110%2B%20Passing%20(100%25)-success?style=flat-square)](vpsmanager/test)
+[![Tests](https://img.shields.io/badge/Tests-110%2B%20Passing%20(100%25)-success?style=flat-square)](othrys/test)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![i18n](https://img.shields.io/badge/i18n-EN%20%7C%20FR%20(100%25)-blue?style=flat-square)](#-internationalization-i18n)
 
@@ -156,7 +156,7 @@ To build or run Othrys from source, ensure your development environment includes
 #### 1. Clone the repository
 ```bash
 git clone https://github.com/Dali999999999/Othrys.git
-cd Othrys/vpsmanager
+cd Othrys/othrys
 ```
 
 #### 2. Install dependencies

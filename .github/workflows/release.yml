@@ -37,15 +37,15 @@ jobs:
         run: flutter config --enable-windows-desktop
 
       - name: Install Dependencies
-        working-directory: vpsmanager
+        working-directory: othrys
         run: flutter pub get
 
       - name: Build Flutter Windows Release
-        working-directory: vpsmanager
+        working-directory: othrys
         run: flutter build windows --release
 
       - name: Prepare Binaries & Package Installer
-        working-directory: vpsmanager
+        working-directory: othrys
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "..\dist" -Force | Out-Null
@@ -98,15 +98,15 @@ jobs:
         run: flutter config --enable-macos-desktop
 
       - name: Install Dependencies
-        working-directory: vpsmanager
+        working-directory: othrys
         run: flutter pub get
 
       - name: Build Flutter macOS Release
-        working-directory: vpsmanager
+        working-directory: othrys
         run: flutter build macos --release
 
       - name: Package macOS App (DMG & ZIP)
-        working-directory: vpsmanager
+        working-directory: othrys
         run: |
           mkdir -p ../dist
           APP_PATH=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -n 1)
@@ -156,15 +156,15 @@ jobs:
         run: flutter config --enable-linux-desktop
 
       - name: Install Dependencies
-        working-directory: vpsmanager
+        working-directory: othrys
         run: flutter pub get
 
       - name: Build Flutter Linux Release
-        working-directory: vpsmanager
+        working-directory: othrys
         run: flutter build linux --release
 
       - name: Package Linux Bundle
-        working-directory: vpsmanager
+        working-directory: othrys
         run: |
           mkdir -p ../dist
           tar -czf ../dist/Othrys-Linux-x64.tar.gz -C build/linux/x64/release/bundle .
@@ -190,7 +190,7 @@ jobs:
       - name: Read Version from Pubspec
         id: version
         run: |
-          VER=$(grep '^version:' vpsmanager/pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d '[:space:]')
+          VER=$(grep '^version:' othrys/pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d '[:space:]')
           if [ -z "$VER" ]; then VER="0.1.0"; fi
           echo "VERSION=$VER" >> $GITHUB_OUTPUT
           echo "TAG=v$VER" >> $GITHUB_OUTPUT

@@ -51,7 +51,7 @@ Before building Othrys, ensure your local development machine meets the followin
 
 2. **Navigate to the application package**:
    ```bash
-   cd vpsmanager
+   cd othrys
    ```
 
 3. **Install dependencies**:
@@ -190,7 +190,7 @@ Othrys supports native English and French with 100% parity:
 Before opening a pull request, execute all local verification steps:
 
 ```bash
-cd vpsmanager
+cd othrys
 
 # 1. Verify static code analysis (0 errors, 0 warnings required)
 flutter analyze --fatal-infos --fatal-warnings

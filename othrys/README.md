@@ -9,7 +9,7 @@ For overall architectural documentation, product vision, security guarantees, an
 ## 🏗️ Package Structure
 
 ```
-vpsmanager/
+othrys/
 ├── lib/
 │   ├── app/           # App root, Fluent theme tokens, window chrome, and routing
 │   ├── core/          # Encryption vault, SSH/SFTP services, local storage, i18n
@@ -25,7 +25,7 @@ vpsmanager/
 
 ## 🛠️ Local Developer Commands
 
-All commands should be executed from within this directory (`vpsmanager/`):
+All commands should be executed from within this directory (`othrys/`):
 
 ### 1. Install Dependencies
 ```bash
