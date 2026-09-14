@@ -1,0 +1,74 @@
+# Git ignore for VPS-MANAGER
+
+# Dart / Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+*.iml
+.pub/
+.pub-cache/
+
+# Android
+**/android/local.properties
+**/android/.gradle
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/gradle/wrapper/gradle-wrapper.jar
+
+# iOS / macOS
+**/ios/.generated/
+**/ios/Flutter/ephemeral/
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.framework
+**/ios/Flutter/flutter_assets/
+**/macos/Flutter/ephemeral/
+**/Pods/
+**/.symlinks/
+
+# Windows
+**/windows/flutter/ephemeral/
+*.VC.db
+*.opendb
+*.msi
+*.exe
+
+# Linux
+**/linux/flutter/ephemeral/
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Antigravity / Gemini / Brain
+.gemini/
+brain/
+*.log
+
+# Security, Certificates & Secrets (NEVER push to git)
+*.pfx
+*.p12
+*.cer
+*.crt
+*.key
+*.pem
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+make_cert.ps1
+sign_binaries.ps1
+
+# Distribution & Installers (distribute via GitHub Releases)
+dist/
+*.exe
+*.msi
+*.appx
+*.msix

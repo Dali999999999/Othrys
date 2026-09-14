@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Community Discussions
+    url: https://github.com/Dali999999999/Othrys/discussions
+    about: Ask questions, share ideas, and connect with other Othrys users and maintainers.
+  - name: 🛡️ Security Vulnerability Report
+    url: https://github.com/Dali999999999/Othrys/security/advisories/new
+    about: Privately report a security vulnerability in Othrys.

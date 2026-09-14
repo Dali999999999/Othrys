@@ -1,0 +1,265 @@
+name: Multi-Platform Release (Windows, macOS, Linux)
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ============================================================================
+  # 1. BUILD WINDOWS (Installer EXE + Portable ZIP)
+  # ============================================================================
+  build-windows:
+    name: Build Windows Release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+
+      - name: Enable Windows Desktop
+        run: flutter config --enable-windows-desktop
+
+      - name: Install Dependencies
+        working-directory: vpsmanager
+        run: flutter pub get
+
+      - name: Build Flutter Windows Release
+        working-directory: vpsmanager
+        run: flutter build windows --release
+
+      - name: Prepare Binaries & Package Installer
+        working-directory: vpsmanager
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path "..\dist" -Force | Out-Null
+          Copy-Item "build\windows\x64\runner\Release\vpsmanager.exe" "build\windows\x64\runner\Release\othrys.exe" -Force
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+              $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe"
+          }
+          & $iscc installer.iss
+          
+          # Copy to canonical Othrys-Setup.exe name
+          $setupFile = Get-ChildItem -Path "..\dist\Othrys-Setup-*.exe" | Where-Object { $_.Name -ne "Othrys-Setup.exe" } | Select-Object -First 1
+          if ($setupFile) {
+              Copy-Item -Path $setupFile.FullName -Destination "..\dist\Othrys-Setup.exe" -Force
+              Write-Host "Created canonical setup: ..\dist\Othrys-Setup.exe from $($setupFile.Name)"
+          } else {
+              Write-Error "Could not find any Othrys-Setup-*.exe in ..\dist"
+              exit 1
+          }
+          
+          # Create Portable ZIP
+          Compress-Archive -Path "build\windows\x64\runner\Release\*" -DestinationPath "..\dist\Othrys-Windows-Portable.zip" -Force
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-release
+          path: |
+            dist/Othrys-Setup.exe
+            dist/Othrys-Windows-Portable.zip
+
+  # ============================================================================
+  # 2. BUILD MACOS (DMG + ZIP)
+  # ============================================================================
+  build-macos:
+    name: Build macOS Release
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable macOS Desktop
+        run: flutter config --enable-macos-desktop
+
+      - name: Install Dependencies
+        working-directory: vpsmanager
+        run: flutter pub get
+
+      - name: Build Flutter macOS Release
+        working-directory: vpsmanager
+        run: flutter build macos --release
+
+      - name: Package macOS App (DMG & ZIP)
+        working-directory: vpsmanager
+        run: |
+          mkdir -p ../dist
+          APP_PATH=$(find build/macos/Build/Products/Release -name "*.app" -maxdepth 1 | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: No .app found in build/macos/Build/Products/Release"
+            exit 1
+          fi
+          echo "Packaging application at: $APP_PATH"
+          
+          # Create portable ZIP
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "../dist/Othrys-macOS.zip"
+          
+          # Create DMG image
+          hdiutil create -volname "Othrys" -srcfolder "$APP_PATH" -ov -format UDZO "../dist/Othrys-macOS.dmg"
+
+      - name: Upload macOS Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-release
+          path: |
+            dist/Othrys-macOS.dmg
+            dist/Othrys-macOS.zip
+
+  # ============================================================================
+  # 3. BUILD LINUX (Portable tar.gz)
+  # ============================================================================
+  build-linux:
+    name: Build Linux Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Linux Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev libsecret-1-dev libjsoncpp-dev
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Enable Linux Desktop
+        run: flutter config --enable-linux-desktop
+
+      - name: Install Dependencies
+        working-directory: vpsmanager
+        run: flutter pub get
+
+      - name: Build Flutter Linux Release
+        working-directory: vpsmanager
+        run: flutter build linux --release
+
+      - name: Package Linux Bundle
+        working-directory: vpsmanager
+        run: |
+          mkdir -p ../dist
+          tar -czf ../dist/Othrys-Linux-x64.tar.gz -C build/linux/x64/release/bundle .
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-release
+          path: dist/Othrys-Linux-x64.tar.gz
+
+  # ============================================================================
+  # 4. PUBLISH MULTI-PLATFORM GITHUB RELEASE
+  # ============================================================================
+  publish-release:
+    name: Publish Multi-Platform Release
+    needs: [build-windows, build-macos, build-linux]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Read Version from Pubspec
+        id: version
+        run: |
+          VER=$(grep '^version:' vpsmanager/pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d '[:space:]')
+          if [ -z "$VER" ]; then VER="0.1.0"; fi
+          echo "VERSION=$VER" >> $GITHUB_OUTPUT
+          echo "TAG=v$VER" >> $GITHUB_OUTPUT
+
+      - name: Download Windows Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-release
+          path: dist
+
+      - name: Download macOS Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-release
+          path: dist
+
+      - name: Download Linux Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-release
+          path: dist
+
+      - name: Generate version.json Metadata
+        run: |
+          cat <<EOF > dist/version.json
+          {
+            "version": "${{ steps.version.outputs.VERSION }}",
+            "tag": "${{ steps.version.outputs.TAG }}",
+            "published_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "assets": {
+              "windows_setup": "Othrys-Setup.exe",
+              "windows_portable": "Othrys-Windows-Portable.zip",
+              "macos_dmg": "Othrys-macOS.dmg",
+              "macos_zip": "Othrys-macOS.zip",
+              "linux_tar": "Othrys-Linux-x64.tar.gz"
+            }
+          }
+          EOF
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.TAG }}
+          name: "Othrys ${{ steps.version.outputs.TAG }}"
+          body: |
+            ## 🚀 Othrys ${{ steps.version.outputs.TAG }} Multi-Platform Release
+            
+            Publication automatique déclenchée par le commit `${{ github.sha }}` sur la branche `main`.
+            
+            ### 📥 Téléchargements
+            
+            | Système d'exploitation | Format | Fichier |
+            |---|---|---|
+            | 🪟 **Windows 10 / 11** | Installeur Setup | **[`Othrys-Setup.exe`](https://github.com/Dali999999999/Othrys/releases/download/${{ steps.version.outputs.TAG }}/Othrys-Setup.exe)** |
+            | 🪟 **Windows 10 / 11** | Archive Portable | [`Othrys-Windows-Portable.zip`](https://github.com/Dali999999999/Othrys/releases/download/${{ steps.version.outputs.TAG }}/Othrys-Windows-Portable.zip) |
+            | 🍏 **macOS (Apple Silicon & Intel)** | Image Disque DMG | **[`Othrys-macOS.dmg`](https://github.com/Dali999999999/Othrys/releases/download/${{ steps.version.outputs.TAG }}/Othrys-macOS.dmg)** |
+            | 🍏 **macOS** | Application ZIP | [`Othrys-macOS.zip`](https://github.com/Dali999999999/Othrys/releases/download/${{ steps.version.outputs.TAG }}/Othrys-macOS.zip) |
+            | 🐧 **Linux (Ubuntu, Debian, Fedora)** | Binaire Tarball | **[`Othrys-Linux-x64.tar.gz`](https://github.com/Dali999999999/Othrys/releases/download/${{ steps.version.outputs.TAG }}/Othrys-Linux-x64.tar.gz)** |
+            
+            ---
+            *Mise à jour automatique in-app supportée via `version.json`.*
+          files: |
+            dist/Othrys-Setup.exe
+            dist/Othrys-Windows-Portable.zip
+            dist/Othrys-macOS.dmg
+            dist/Othrys-macOS.zip
+            dist/Othrys-Linux-x64.tar.gz
+            dist/version.json
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,0 +1,825 @@
+{
+  "@@locale": "en",
+  "appTitle": "Othrys",
+  "@appTitle": {
+    "description": "Application title"
+  },
+
+  "navServers": "Servers",
+  "navTerminal": "Terminal",
+  "navFiles": "Files",
+  "navMonitoring": "Monitoring",
+  "navDocker": "Docker",
+  "navServices": "Services",
+  "navTunnels": "Tunnels",
+  "navActivity": "Audit Log",
+  "navSettings": "Settings",
+
+  "commonSave": "Save",
+  "commonCancel": "Cancel",
+  "commonDelete": "Delete",
+  "commonConfirm": "Confirm",
+  "commonRefresh": "Refresh",
+  "commonRetry": "Retry",
+  "commonConnect": "Connect",
+  "commonDisconnect": "Disconnect",
+  "commonConnected": "Connected",
+  "commonDisconnected": "Disconnected",
+  "commonConnecting": "Connecting...",
+  "commonReconnecting": "Reconnecting...",
+  "commonError": "Error",
+  "commonSuccess": "Success",
+  "commonLoading": "Loading...",
+  "commonClose": "Close",
+  "commonSearch": "Search...",
+  "commonFilter": "Filter",
+  "commonName": "Name",
+  "commonStatus": "Status",
+  "commonActions": "Actions",
+  "commonClear": "Clear",
+  "commonCopy": "Copy",
+  "commonCopied": "Copied to clipboard",
+  "commonFieldRequired": "Please fill in all required fields.",
+  "commonEmpty": "No items found.",
+
+  "windowExitConfirmTitle": "Confirm Application Exit",
+  "windowExitConfirmMessage": "{count} active SSH session(s) currently open. Exiting will terminate all remote sessions. Are you sure?",
+  "@windowExitConfirmMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "windowExitDisconnect": "Disconnect & Exit",
+  "windowSearchActions": "Search actions...",
+  "windowActiveCount": "{count} connected",
+  "@windowActiveCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+
+  "tabErrorTitle": "An unexpected error occurred in {tabName}",
+  "@tabErrorTitle": {
+    "placeholders": {
+      "tabName": {
+        "type": "String"
+      }
+    }
+  },
+  "tabErrorReload": "Reload Tab",
+
+  "serversTitle": "Servers & Environments",
+  "serversFilterPlaceholder": "Filter servers...",
+  "serversAdd": "Add Server",
+  "serversEdit": "Edit Server",
+  "serversEmptyTitle": "No servers registered",
+  "serversEmptySubtitle": "Add your remote VPS or cloud instances to start managing DevOps resources.",
+  "serversAddFirst": "Add Your First Server",
+  "serversNeverConnected": "Never connected",
+  "serversSeen": "Seen {time}",
+  "@serversSeen": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "serversDeleteConfirmTitle": "Delete Server Profile",
+  "serversDeleteConfirmMessage": "Are you sure you want to remove \"{name}\"? Credentials and connection settings will be safely wiped.",
+  "@serversDeleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "serversTestConnection": "Test Connection",
+  "serversTesting": "Testing connection...",
+  "serversTestSuccess": "Connection successful!",
+  "serversTestFailed": "Connection failed: {reason}",
+  "@serversTestFailed": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "serversFieldHost": "Host / IP Address",
+  "serversFieldPort": "SSH Port",
+  "serversFieldUsername": "Username",
+  "serversFieldAuthType": "Authentication Method",
+  "serversAuthPassword": "Password",
+  "serversAuthKey": "Private Key",
+  "serversFieldPassword": "Password",
+  "serversFieldPrivateKey": "Private Key (PEM/OpenSSH)",
+  "serversFieldPassphrase": "Key Passphrase (optional)",
+  "serversSelectKeyFile": "Pick Key File",
+  "serversShowPassword": "Show password",
+
+  "terminalNewTab": "New Tab",
+  "terminalCloseTab": "Close Tab",
+  "terminalActiveTabs": "Active Shells",
+  "terminalClearBuffer": "Clear Screen",
+  "terminalCopy": "Copy",
+  "terminalPaste": "Paste",
+  "terminalSelectAll": "Select All",
+  "terminalOpenSession": "Open Terminal Session",
+  "terminalGuardMessage": "Connect to a server from the Servers tab to open an interactive terminal.",
+
+  "monitoringTitle": "{serverName} — System Metrics",
+  "@monitoringTitle": {
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "monitoringUptimeLabel": "Uptime: {uptime}",
+  "@monitoringUptimeLabel": {
+    "placeholders": {
+      "uptime": {
+        "type": "String"
+      }
+    }
+  },
+  "monitoringWarning": "Monitoring Warning",
+  "monitoringCpuTitle": "CPU Usage",
+  "monitoringCpuKernel": "Kernel: {kernel}",
+  "@monitoringCpuKernel": {
+    "placeholders": {
+      "kernel": {
+        "type": "String"
+      }
+    }
+  },
+  "monitoringRamTitle": "RAM Memory",
+  "monitoringDiskTitle": "Disk Storage (Root)",
+  "monitoringCpuTrend": "CPU Load Trend (Last 60 Seconds)",
+  "monitoringCollecting": "Collecting metrics...",
+  "monitoringGuardMessage": "Connect to a server from the Servers tab to inspect real-time performance telemetry.",
+
+  "dockerTitle": "Container Management",
+  "dockerContainers": "Containers",
+  "dockerCompose": "Docker Compose",
+  "dockerStart": "Start",
+  "dockerStop": "Stop",
+  "dockerRestart": "Restart",
+  "dockerRemove": "Remove",
+  "dockerLogs": "View Logs",
+  "dockerNoContainers": "No Docker containers detected on this host.",
+  "dockerConfirmRemove": "Are you sure you want to remove container '{name}'?",
+  "@dockerConfirmRemove": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerConfirmStop": "Are you sure you want to stop running container '{name}'?",
+  "@dockerConfirmStop": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerGuardMessage": "Connect to a server to discover and manage Docker containers.",
+  "dockerNotInstalledTitle": "Docker is not installed",
+  "dockerNotInstalledSubtitle": "Docker was not found on this server. Run the official automated install script to configure the Docker runtime engine.",
+  "dockerInstallCommand": "curl -fsSL https://get.docker.com | sh",
+  "dockerCopyCommand": "Copy Install Command",
+  "dockerComposePath": "Compose Directory Path",
+  "dockerComposeUp": "Compose Up",
+  "dockerComposeDown": "Compose Down",
+  "dockerComposeLogs": "Compose Logs",
+  "dockerLogsStreaming": "Streaming Logs",
+  "dockerLogsPause": "Pause Stream",
+  "dockerLogsResume": "Resume Stream",
+  "dockerLogsCopy": "Copy Logs",
+
+  "servicesTitle": "Systemd Services",
+  "servicesSearchPlaceholder": "Filter services by unit name...",
+  "servicesStart": "Start",
+  "servicesStop": "Stop",
+  "servicesRestart": "Restart",
+  "servicesReload": "Reload",
+  "servicesLogs": "View Journals",
+  "servicesNoServices": "No services found matching current criteria.",
+  "servicesConfirmStopCritical": "Warning: '{unit}' is a critical system service. Stopping it may disconnect your SSH session or degrade server operation. Are you sure you want to proceed?",
+  "@servicesConfirmStopCritical": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "servicesConfirmStop": "Are you sure you want to stop service \"{unit}\"?",
+  "@servicesConfirmStop": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "servicesEnable": "Enable",
+  "servicesDisable": "Disable",
+  "servicesEnabledBadge": "Enabled on boot",
+  "servicesDisabledBadge": "Disabled on boot",
+  "servicesGuardMessage": "Connect to a server to inspect systemd services and units.",
+
+  "filesTitle": "SFTP File Explorer",
+  "filesNewFolder": "New Folder",
+  "filesNewFile": "New File",
+  "filesUpload": "Upload",
+  "filesDownload": "Download",
+  "filesRename": "Rename",
+  "filesDelete": "Delete",
+  "filesEdit": "Edit File",
+  "filesSaveContent": "Save Content",
+  "filesDeleteConfirm": "Are you sure you want to delete '{name}'?",
+  "@filesDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesTooLarge": "File size exceeds 1 MB limit for inline editor.",
+  "filesBinaryWarning": "Binary files cannot be opened in text editor.",
+  "filesGuardMessage": "Connect to a server to browse and manage remote files via SFTP.",
+  "filesUploadSuccess": "File uploaded successfully: {name}",
+  "@filesUploadSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesDownloadSuccess": "File downloaded successfully: {name}",
+  "@filesDownloadSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesRenameTitle": "Rename: {name}",
+  "@filesRenameTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesRenamePlaceholder": "Enter new file or folder name...",
+  "filesUploadLimitExceeded": "File size exceeds 100 MB upload limit.",
+  "filesDownloadLimitExceeded": "File size exceeds 100 MB download limit.",
+  "filesRootDirectory": "Root",
+
+  "tunnelsTitle": "SSH Port Forwarding",
+  "tunnelsNew": "New Tunnel",
+  "tunnelsActive": "Active Tunnels",
+  "tunnelsNoTunnels": "No port forwarding tunnels configured.",
+  "tunnelsTypeLocal": "Local Forwarding",
+  "tunnelsTypeRemote": "Remote Forwarding",
+  "tunnelsTypeDynamic": "Dynamic SOCKS5",
+  "tunnelsLocalPort": "Local Port",
+  "tunnelsRemoteHost": "Remote Target Host",
+  "tunnelsRemotePort": "Remote Port",
+  "tunnelsGuardMessage": "Connect to a server to manage active port forwarding tunnels.",
+
+  "activityTitle": "Security & Action Audit Log",
+  "activityClear": "Clear History",
+  "activityFilterAll": "All Categories",
+  "activityFilterSsh": "SSH Connections",
+  "activityFilterDocker": "Docker Commands",
+  "activityFilterServices": "System Services",
+  "activityFilterFiles": "File Changes",
+  "activityFilterSecurity": "Security Warnings",
+  "activityNoLogs": "No activity logs recorded yet.",
+
+  "filesHeader": "{serverName} — SFTP Files",
+  "@filesHeader": {
+    "placeholders": {
+      "serverName": {
+        "type": "String"
+      }
+    }
+  },
+  "filesEditorTitle": "Editing: {name}",
+  "@filesEditorTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "filesSaveFile": "Save File",
+  "filesCreateFolderTitle": "Create New Folder",
+  "filesCreateFileTitle": "Create New File",
+  "filesCreate": "Create",
+  "filesFolderPlaceholder": "folder_name",
+  "filesFilePlaceholder": "filename.txt",
+  "filesDeleteConfirmTitle": "Confirm Deletion",
+  "filesEmpty": "Directory is empty",
+  "filesFolderType": "Folder",
+  "filesErrorTitle": "SFTP Error",
+  "filesCannotOpen": "Cannot Open File",
+  "filesSaveFailed": "Save Failed",
+  "filesCreationFailed": "Creation Failed",
+  "filesDeletionFailed": "Deletion Failed",
+  "filesLocation": "Location:",
+  "filesNameLabel": "Name",
+  "filesInvalidName": "Name contains invalid characters (/ \\ \u0000)",
+  "filesNameAlreadyExists": "An item with this name already exists",
+
+  "tunnelsDialogTitle": "New SSH Port Forwarding Tunnel",
+  "tunnelsNameLabel": "Tunnel Name",
+  "tunnelsLocalPortLabel": "Local Port on Windows PC",
+  "tunnelsRemotePortLabel": "Remote Destination Port",
+  "tunnelsRemoteHostLabel": "Destination Host (relative to VPS)",
+  "tunnelsStart": "Start Tunnel",
+  "tunnelsClose": "Close",
+  "tunnelsErrorFailed": "Failed to establish tunnel",
+  "tunnelsEmptySubtitle": "No active tunnels. Click \"New Tunnel\" to forward remote services locally.",
+
+  "activityFilterTunnels": "SSH Tunnels",
+  "activityFilterSystem": "System Events",
+
+  "cmdPalettePlaceholder": "Type a command, server, or action...",
+  "cmdPaletteEscToClose": "ESC to close",
+  "cmdPaletteSectionServers": "SERVERS",
+  "cmdPaletteSectionNavigation": "NAVIGATION",
+  "cmdPaletteSectionActions": "ACTIONS",
+  "cmdPaletteNoResults": "No matching commands or servers found.",
+  "cmdPaletteDisconnect": "Disconnect Active Session",
+
+  "serversAddTitle": "Add Server Profile",
+  "serversEditTitle": "Edit Server Profile",
+  "serversFieldName": "Display Name",
+  "serversFieldNamePlaceholder": "e.g. Production Web Server",
+  "serversFieldHostPlaceholder": "192.168.1.10 or server.com",
+  "serversFieldGroup": "Group / Category",
+  "serversFieldGroupPlaceholder": "e.g. Production, Clients",
+  "serversFieldPasswordPlaceholder": "Enter remote user password",
+  "serversFieldPassphrasePlaceholder": "Key decryption passphrase if encrypted",
+  "serversFieldBastion": "Jump Host / Bastion (Optional)",
+  "serversBastionDirect": "Direct Connection (No Bastion)",
+  "serversAddSubmit": "Add Server",
+  "serversEditSubmit": "Save Changes",
+
+  "settingsTitle": "Application Settings",
+  "settingsTheme": "Interface Theme",
+  "settingsThemeDark": "Dark",
+  "settingsThemeLight": "Light",
+  "settingsThemeSystem": "System Default",
+  "settingsLanguage": "Language",
+  "settingsLangFr": "Français",
+  "settingsLangEn": "English",
+  "settingsTerminalFontSize": "Terminal Font Size ({size}px)",
+  "@settingsTerminalFontSize": {
+    "placeholders": {
+      "size": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsMonitoringInterval": "Monitoring Polling Interval ({seconds}s)",
+  "@settingsMonitoringInterval": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsBackup": "Configuration Backup & Restore",
+  "settingsExport": "Export Configuration",
+  "settingsExportDesc": "Export encrypted server and tunnel configurations as backup.",
+  "settingsExportSuccess": "Configurations successfully exported.",
+  "settingsImport": "Import Configuration",
+  "settingsImportDesc": "Restore server profiles and tunnels from an exported backup file.",
+  "settingsImportSuccess": "Configurations successfully imported.",
+  "settingsLicense": "License: MIT Open Source",
+  "settingsGitHub": "GitHub Repository",
+  "settingsAbout": "About Othrys",
+  "settingsVersion": "Version",
+
+  "onboardingWelcome": "Welcome to Othrys",
+  "onboardingSubtitle": "Linux server administration.",
+  "onboardingAddServer": "Add Your First Server",
+  "onboardingExplore": "Explore Dashboard",
+
+  "guardNoConnectionTitle": "No Active SSH Connection",
+  "guardNoConnectionSubtitle": "Select a server and click 'Connect' to enable this feature.",
+  "guardSelectServer": "Go to Servers",
+
+  "tunnelsTitle": "SSH Tunnels",
+  "tunnelsNew": "New Tunnel",
+  "tunnelsGuardMessage": "Connect to a server to manage port forwarding tunnels.",
+  "tunnelsEmptyTitle": "No Active Tunnels",
+  "tunnelsEmptySubtitle": "Forward local ports securely through your active SSH connection.",
+  "tunnelsDeleteConfirmTitle": "Delete Tunnel",
+  "tunnelsDeleteConfirmMessage": "Are you sure you want to delete the tunnel '{name}'?",
+  "@tunnelsDeleteConfirmMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+
+  "roleRoot": "Root (Superuser)",
+  "roleSudoer": "Admin (sudo)",
+  "roleStandard": "Standard (Restricted)",
+  "servicesPermissionRestricted": "Read-only mode: connected account ({username}) does not have root or sudo privileges to modify services.",
+  "@servicesPermissionRestricted": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "dockerPermissionRestricted": "Restricted access: connected account ({username}) does not have access to the Docker daemon (not in docker group and no sudo).",
+  "@dockerPermissionRestricted": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "filesPermissionNotice": "System directory: account ({username}) has restricted privileges outside home directory.",
+  "@filesPermissionNotice": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "filesOpenTerminal": "Open Terminal Here",
+  "filesCloseTerminal": "Close Terminal",
+  "filesTerminalTitle": "Terminal — {path}",
+  "@filesTerminalTitle": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "filesCopyPath": "Copy Path",
+  "filesPathCopied": "Path copied to clipboard",
+  "filesCdHere": "Sync Terminal (cd)",
+  "filesNavigateBack": "Back",
+  "filesNavigateForward": "Forward",
+  "filesNavigateUp": "Up",
+  "filesEditPath": "Edit Path",
+  "commonExpand": "Expand",
+  "commonCollapse": "Collapse",
+  "terminalNoConnection": "No active SSH connection",
+  "navDatabases": "Databases",
+  "navWebSites": "Web Sites & SSL",
+  "servicesCreate": "New Service",
+  "servicesCreateTitle": "Create Systemd Service",
+  "servicesNameLabel": "Service Name",
+  "servicesNamePlaceholder": "e.g. my-api",
+  "servicesDescLabel": "Description",
+  "servicesDescPlaceholder": "e.g. My Backend API Service",
+  "servicesExecStartLabel": "ExecStart Command",
+  "servicesExecStartPlaceholder": "/usr/bin/node /var/www/my-api/index.js",
+  "servicesWorkDirLabel": "Working Directory",
+  "servicesWorkDirPlaceholder": "/var/www/my-api",
+  "servicesUserLabel": "Run as User",
+  "servicesRestartPolicy": "Restart Policy",
+  "servicesEnvLabel": "Environment Variables (KEY=VALUE)",
+  "servicesEnableBoot": "Enable at boot",
+  "servicesStartNow": "Start immediately",
+  "servicesPreview": "Unit File Preview",
+  "servicesCreateSuccess": "Service '{name}' created and deployed successfully",
+  "@servicesCreateSuccess": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "servicesCreateError": "Failed to create service: {error}",
+  "@servicesCreateError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dbTitle": "Databases",
+  "dbEngineSelect": "Database Engine",
+  "dbMysql": "MySQL / MariaDB",
+  "dbPostgres": "PostgreSQL",
+  "dbNotInstalled": "{engine} is not installed or running on this server",
+  "@dbNotInstalled": {
+    "placeholders": {
+      "engine": {
+        "type": "String"
+      }
+    }
+  },
+  "dbTabDatabases": "Databases",
+  "dbTabUsers": "Users & Privileges",
+  "dbTabQuery": "SQL Console",
+  "dbCreate": "New Database",
+  "dbCreateTitle": "Create Database",
+  "dbName": "Database Name",
+  "dbCollation": "Charset / Collation",
+  "dbDeleteConfirm": "Are you sure you want to drop database '{name}'? This action cannot be undone.",
+  "@dbDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dbUserCreate": "New User",
+  "dbUserCreateTitle": "Create Database User",
+  "dbUsername": "Username",
+  "dbPassword": "Password",
+  "dbHost": "Host",
+  "dbPrivileges": "Privileges",
+  "dbUserDeleteConfirm": "Are you sure you want to delete user '{name}'?",
+  "@dbUserDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "dbQueryRun": "Execute Query",
+  "dbQueryPlaceholder": "Write SQL query (e.g. SELECT * FROM table LIMIT 50;)...",
+  "dbQueryResults": "Results",
+  "dbQueryEmpty": "Query executed successfully, no rows returned.",
+  "dbExport": "Export SQL Dump",
+  "dbImport": "Import SQL File",
+  "webSitesTitle": "Web Sites & SSL",
+  "webSitesNginxNotInstalled": "Nginx is not installed on this server. Install it to manage web sites and reverse proxies.",
+  "webSitesInstallNginx": "Install Nginx",
+  "webSitesCreate": "New Site",
+  "webSitesCreateTitle": "Configure New Web Site",
+  "webSitesDomain": "Domain / Subdomain Name",
+  "webSitesDomainPlaceholder": "e.g. api.example.com or app.example.com",
+  "webSitesType": "Site Type",
+  "webSitesTypeProxy": "Reverse Proxy (API / Backend / Docker)",
+  "webSitesTypeStatic": "Static Website (HTML / SPA / Frontend)",
+  "webSitesTargetPort": "Local Port / Target URL",
+  "webSitesTargetPortPlaceholder": "e.g. 3000 or http://127.0.0.1:8080",
+  "webSitesStaticRoot": "Document Root Path",
+  "webSitesStaticRootPlaceholder": "/var/www/my-site/dist",
+  "webSitesEnableSsl": "Enable HTTPS with Let's Encrypt (Certbot)",
+  "webSitesEmail": "Let's Encrypt Email (for renewal notices)",
+  "webSitesStatusEnabled": "Enabled",
+  "webSitesStatusDisabled": "Disabled",
+  "webSitesEnable": "Enable Site",
+  "webSitesDisable": "Disable Site",
+  "webSitesDeleteConfirm": "Are you sure you want to delete site '{domain}'?",
+  "@webSitesDeleteConfirm": {
+    "placeholders": {
+      "domain": {
+        "type": "String"
+      }
+    }
+  },
+  "webSitesProvisionSsl": "Provision SSL (HTTPS)",
+  "webSitesRenewSsl": "Test SSL Renewal",
+  "webSitesSslActive": "HTTPS Secured",
+  "webSitesSslInactive": "HTTP Only",
+
+  "navSecurity": "Security & Admin",
+  "adminTitle": "Server Administration & Security",
+  "adminTabFirewall": "Firewall (UFW)",
+  "adminTabPorts": "Listening Ports",
+  "adminTabUsers": "System Users",
+  "adminTabMaintenance": "Maintenance & Settings",
+  "adminFirewallStatus": "Firewall Status",
+  "adminFirewallActive": "Firewall is ACTIVE",
+  "adminFirewallInactive": "Firewall is INACTIVE",
+  "adminFirewallEnable": "Enable Firewall",
+  "adminFirewallDisable": "Disable Firewall",
+  "adminFirewallConfirmEnable": "Enabling the firewall without an active SSH rule may disconnect you. Ensure port 22 or your custom SSH port is allowed. Continue?",
+  "adminFirewallAddRule": "Add Rule",
+  "adminFirewallAddRuleTitle": "Add Firewall Rule",
+  "adminFirewallRulePort": "Port / Range / Service",
+  "adminFirewallRulePortPlaceholder": "e.g. 22 or 8080 or 8000:8010",
+  "adminFirewallRuleProto": "Protocol",
+  "adminFirewallRuleAction": "Action",
+  "adminFirewallRuleSource": "Source IP / Subnet (Optional)",
+  "adminFirewallRuleSourcePlaceholder": "e.g. Anywhere or 192.168.1.0/24",
+  "adminFirewallPreset": "Preset Service",
+  "adminFirewallDeleteConfirm": "Delete firewall rule #{ruleNumber} ({target})?",
+  "@adminFirewallDeleteConfirm": {
+    "placeholders": {
+      "ruleNumber": {
+        "type": "int"
+      },
+      "target": {
+        "type": "String"
+      }
+    }
+  },
+  "adminPortsTitle": "Open Ports & Sockets",
+  "adminPortsProcess": "Process / Service",
+  "adminPortsAddress": "Local Address",
+  "adminPortsPublic": "Publicly Exposed",
+  "adminPortsLocal": "Localhost Only",
+  "adminPortsAllowInFirewall": "Allow in Firewall",
+  "adminUsersTitle": "Linux System Accounts",
+  "adminUsersAdd": "New User",
+  "adminUsersAddTitle": "Create System User",
+  "adminUsersUsername": "Username",
+  "adminUsersUsernamePlaceholder": "e.g. deployer",
+  "adminUsersPassword": "Initial Password",
+  "adminUsersPasswordPlaceholder": "Strong password",
+  "adminUsersShell": "Login Shell",
+  "adminUsersGrantSudo": "Grant Administrator Privileges (sudo)",
+  "adminUsersSshKeys": "Authorized SSH Keys",
+  "adminUsersAddKey": "Add SSH Key",
+  "adminUsersAddKeyTitle": "Add Authorized Public Key",
+  "adminUsersKeyPlaceholder": "Paste public key (ssh-ed25519 or ssh-rsa)...",
+  "adminMaintenanceUpdates": "Operating System Updates",
+  "adminMaintenanceUpdatesAvailable": "{count} package(s) can be upgraded.",
+  "@adminMaintenanceUpdatesAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminMaintenanceUpdatesNone": "Your operating system is up to date.",
+  "adminMaintenanceApplyUpdates": "Upgrade System Packages",
+  "adminMaintenanceHostname": "Server Hostname",
+  "adminMaintenanceChangeHostname": "Update Hostname",
+  "adminMaintenanceReboot": "Reboot Server",
+  "adminMaintenanceRebootConfirm": "Rebooting will terminate all active connections and services. Are you sure you want to reboot the remote server?",
+
+  "navGit": "Git Repositories",
+  "gitTitle": "Git Repositories",
+  "gitSubtitle": "Manage, clone, pull, and monitor Git projects on your server.",
+  "gitNotInstalledTitle": "Git is Not Installed",
+  "gitNotInstalledDesc": "The Git version control binary was not found on this server. Install it to manage your repositories.",
+  "gitInstallBtn": "Install Git",
+  "gitInstalling": "Installing Git...",
+  "gitInstalledSuccessTitle": "Git Installed",
+  "gitInstalledSuccessDesc": "Git was successfully installed on the remote server.",
+  "gitNoReposTitle": "No Repositories Tracked",
+  "gitNoReposDesc": "Scan your server for existing Git projects or clone a new repository.",
+  "gitScanServer": "Scan Server",
+  "gitScanning": "Scanning for repositories...",
+  "gitScanFound": "{count} repository(ies) discovered!",
+  "@gitScanFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gitAddRepoPath": "Add Existing Path",
+  "gitAddRepoPathTitle": "Track Existing Repository",
+  "gitAddRepoPathPlaceholder": "e.g. /var/www/my-app",
+  "gitClone": "Clone Repository",
+  "gitCloneTitle": "Clone Git Repository",
+  "gitCloneUrl": "Repository URL (HTTPS or SSH)",
+  "gitCloneUrlPlaceholder": "e.g. https://github.com/org/repo.git or git@github.com:org/repo.git",
+  "gitCloneDest": "Destination Directory",
+  "gitCloneDestPlaceholder": "e.g. /var/www/my-app",
+  "gitCloneBranch": "Initial Branch (Optional)",
+  "gitCloneBranchPlaceholder": "e.g. main or production",
+  "gitCloneShallow": "Shallow clone (--depth 1, faster for deployments)",
+  "gitCloneSubmodules": "Recurse submodules",
+  "gitCloneSshNotice": "If cloning a private SSH repository, ensure this server's public Deploy Key is added to GitHub / GitLab.",
+  "gitSelectRepo": "Select Repository",
+  "gitRemoveTracked": "Untrack Repository",
+  "gitRemoveTrackedConfirm": "Remove '{name}' from tracked repositories? (Remote files will not be deleted)",
+  "@gitRemoveTrackedConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "gitPull": "Pull",
+  "gitPulling": "Pulling changes...",
+  "gitPullSuccess": "Successfully pulled latest changes.",
+  "gitFetch": "Fetch",
+  "gitFetching": "Fetching remote refs...",
+  "gitFetchSuccess": "Successfully fetched remote refs.",
+  "gitTerminalHere": "Terminal Here",
+  "gitExploreFiles": "Explore Files",
+  "gitStatusClean": "Working tree is clean",
+  "gitStatusDirty": "Uncommitted changes ({count})",
+  "@gitStatusDirty": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gitStatusAhead": "{count} commit(s) ahead",
+  "@gitStatusAhead": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gitStatusBehind": "{count} commit(s) behind",
+  "@gitStatusBehind": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "gitStatusUpToDate": "Up to date with origin",
+  "gitStatusDetached": "Detached HEAD",
+  "gitTabStatus": "Status & Changes",
+  "gitTabBranches": "Branches",
+  "gitTabHistory": "Commit History",
+  "gitTabDeployKey": "Deploy Keys & Config",
+  "gitDiscardChanges": "Discard Changes",
+  "gitDiscardConfirm": "Discard all local modifications and untracked files? This action cannot be undone.",
+  "gitStash": "Stash Changes",
+  "gitStashPop": "Apply Stash (Pop)",
+  "gitCommit": "Commit & Push",
+  "gitCommitTitle": "Commit & Push Changes",
+  "gitCommitMessage": "Commit Message",
+  "gitCommitMessagePlaceholder": "Describe the changes...",
+  "gitPushAlso": "Push to remote immediately",
+  "gitBranchCurrent": "Current Branch",
+  "gitBranchSwitch": "Switch Branch",
+  "gitBranchNew": "New Branch",
+  "gitBranchNewTitle": "Create & Checkout Branch",
+  "gitBranchNamePlaceholder": "e.g. feature/api-auth",
+  "gitDeployKeyTitle": "Server Deploy Key (SSH)",
+  "gitDeployKeyDesc": "Copy this public key and add it as a Deploy Key in GitHub / GitLab to clone and pull private repositories without credentials.",
+  "gitDeployKeyGenerate": "Generate Deploy Key (ED25519)",
+  "gitDeployKeyCopy": "Copy Public Key",
+  "gitDeployKeyCopied": "Deploy key copied to clipboard!",
+  "gitDeployKeyNone": "No SSH key pair found on this server. Generate one to enable private repo cloning.",
+  "gitConfigTitle": "Git Committer Identity",
+  "gitConfigName": "Git User Name",
+  "gitConfigEmail": "Git User Email",
+  "gitConfigSave": "Save Git Identity",
+  "gitOpenFileInManager": "Open in Git",
+  "gitLocalBranchesCount": "Local Branches ({count})",
+  "gitRemoteBranchesCount": "Remote Tracking Branches ({count})",
+  "gitHistoryCount": "Commit History ({count})",
+  "gitNoCommits": "No commits found.",
+  "gitCommitCopied": "Commit {hash} copied to clipboard.",
+  "dockerComposeDownConfirm": "Are you sure you want to stop and remove all containers and networks for Compose project '{path}'?",
+  "@dockerComposeDownConfirm": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "servicesConfirmDisable": "Are you sure you want to disable service \"{unit}\"? It will no longer start automatically on system boot.",
+  "@servicesConfirmDisable": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "servicesConfirmDisableCritical": "Warning: \"{unit}\" is a critical system service. Disabling it may render the remote server unreachable on reboot. Continue?",
+  "@servicesConfirmDisableCritical": {
+    "placeholders": {
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "adminFirewallConfirmDisable": "Disabling the firewall exposes all open ports on your server to the Internet. Are you sure you want to disable the firewall?",
+  "adminUserDeleteTitle": "Delete User",
+  "adminUserDeleteConfirm": "Are you sure you want to permanently delete system user '{username}' and their home directory?",
+  "@adminUserDeleteConfirm": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "adminMaintenanceUpgradeConfirmTitle": "Upgrade System Packages",
+  "adminMaintenanceUpgradeConfirm": "This will install updates for {count} system package(s) via APT. Essential services may restart. Continue?",
+  "@adminMaintenanceUpgradeConfirm": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "adminMaintenanceRebootDesc": "Send ACPI reboot signal to restart the remote VPS machine.",
+  "gitDeployKeyOverwriteTitle": "Overwrite Deploy Key",
+  "gitDeployKeyOverwriteConfirm": "An SSH deploy key already exists on this server. Generating a new one will replace the existing key and break access for repositories using the old key. Do you want to continue?",
+  "gitConfigSavedTitle": "Configuration Saved",
+  "gitConfigSavedDesc": "Git committer name and email updated successfully."
+}

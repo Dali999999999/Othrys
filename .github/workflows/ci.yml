@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  analyze-and-test:
+    name: Lint, Test & Quality Gates
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: vpsmanager
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Verify 700-Line Limit
+        run: |
+          python3 -c "
+          import os, sys
+          failed = False
+          for root, dirs, files in os.walk('lib'):
+              for f in files:
+                  if f.endswith('.dart') and not f.startswith('app_localizations'):
+                      path = os.path.join(root, f)
+                      with open(path, 'r', encoding='utf-8', errors='ignore') as fp:
+                          count = sum(1 for _ in fp)
+                          if count > 700:
+                              print(f'VIOLATION: {path} has {count} lines (> 700)')
+                              failed = True
+          if failed:
+              sys.exit(1)
+          print('PASS: All files adhere to the 700-line ceiling rule.')
+          "
+
+      - name: Run Static Analysis
+        run: flutter analyze --fatal-infos --fatal-warnings
+
+      - name: Run Automated Tests
+        run: flutter test --coverage

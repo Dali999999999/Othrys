@@ -1,0 +1,88 @@
+name: vpsmanager
+description: "Industrial-grade DevOps desktop suite for Linux VPS management, built with Flutter and Windows 11 Native Fluent UI."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.13.2
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Window Management (Windows 11 Native Fluent Design)
+  fluent_ui: ^4.9.4
+  window_manager: ^0.4.3
+  cupertino_icons: ^1.0.8
+  file_picker: ^8.1.7
+
+  # SSH, SFTP, Tunnels & Terminal
+  dartssh2: ^2.12.0
+  xterm: ^4.0.0
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Security & Storage
+  cryptography: ^2.7.2
+  flutter_secure_storage: ^9.2.2
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  shared_preferences: ^2.3.5
+  uuid: ^4.5.1
+  convert: ^3.1.2
+
+  # Charts & Monitoring
+  fl_chart: ^0.70.2
+  intl: ^0.20.2
+  flutter_svg: ^2.3.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^6.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+  generate: true
+
+  assets:
+    - assets/images/logo.png
+    - assets/images/logo.svg
+    - assets/images/animation_x2.webp
+
+  fonts:
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
