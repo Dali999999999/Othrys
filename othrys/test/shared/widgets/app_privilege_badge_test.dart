@@ -1,8 +1,8 @@
-import 'package:fluent_ui/fluent_ui.dart';
+﻿import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/l10n/l10n.dart';
-import 'package:vpsmanager/core/models/user_privileges_entity.dart';
-import 'package:vpsmanager/shared/widgets/app_privilege_badge.dart';
+import 'package:othrys/core/l10n/l10n.dart';
+import 'package:othrys/core/models/user_privileges_entity.dart';
+import 'package:othrys/shared/widgets/app_privilege_badge.dart';
 
 void main() {
   Widget testWrapper(Widget child) {

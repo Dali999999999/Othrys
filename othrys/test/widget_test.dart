@@ -1,9 +1,9 @@
-import 'dart:ui';
+﻿import 'dart:ui';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vpsmanager/app/app.dart';
-import 'package:vpsmanager/core/services/settings_service.dart';
+import 'package:othrys/app/app.dart';
+import 'package:othrys/core/services/settings_service.dart';
 
 void main() {
   testWidgets('OthrysApp smoke test', (WidgetTester tester) async {

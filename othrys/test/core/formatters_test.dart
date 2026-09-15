@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/utils/formatters.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/utils/formatters.dart';
 
 void main() {
   group('Formatters', () {

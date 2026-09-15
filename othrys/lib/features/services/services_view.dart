@@ -56,31 +56,50 @@ class _ServicesViewState extends ConsumerState<ServicesView> {
     final session = ref.read(serverControllerProvider).activeSession;
     final server = ref.read(serverControllerProvider).selectedServer;
     if (session == null) return;
+    final l10n = context.l10n;
 
     if (action == 'stop') {
       final isCritical = criticalServices.contains(service.unit.replaceAll('.service', ''));
       final confirmed = await ConfirmDialog.show(
         context: context,
-        title: '${context.l10n.servicesStop}: ${service.unit}',
-        content: isCritical
-            ? context.l10n.servicesConfirmStopCritical(service.unit)
-            : context.l10n.servicesConfirmStop(service.unit),
-        confirmText: context.l10n.servicesStop,
-        isDanger: true,
+        title: '${l10n.servicesStop}: ${service.unit}',
+        content: l10n.servicesConfirmStop(service.unit),
+        confirmText: l10n.servicesStop,
+        isDanger: isCritical,
       );
-      if (!confirmed) return;
+      if (!confirmed || !mounted) return;
+
+      if (isCritical) {
+        final secondConfirmed = await ConfirmDialog.show(
+          context: context,
+          title: '${l10n.servicesStop} (2/2): ${service.unit}',
+          content: l10n.servicesConfirmStopCritical(service.unit),
+          confirmText: l10n.servicesStop,
+          isDanger: true,
+        );
+        if (!secondConfirmed || !mounted) return;
+      }
     } else if (action == 'disable') {
       final isCritical = criticalServices.contains(service.unit.replaceAll('.service', ''));
       final confirmed = await ConfirmDialog.show(
         context: context,
-        title: '${context.l10n.servicesDisable}: ${service.unit}',
-        content: isCritical
-            ? context.l10n.servicesConfirmDisableCritical(service.unit)
-            : context.l10n.servicesConfirmDisable(service.unit),
-        confirmText: context.l10n.servicesDisable,
+        title: '${l10n.servicesDisable}: ${service.unit}',
+        content: l10n.servicesConfirmDisable(service.unit),
+        confirmText: l10n.servicesDisable,
         isDanger: isCritical,
       );
-      if (!confirmed) return;
+      if (!confirmed || !mounted) return;
+
+      if (isCritical) {
+        final secondConfirmed = await ConfirmDialog.show(
+          context: context,
+          title: '${l10n.servicesDisable} (2/2): ${service.unit}',
+          content: l10n.servicesConfirmDisableCritical(service.unit),
+          confirmText: l10n.servicesDisable,
+          isDanger: true,
+        );
+        if (!secondConfirmed || !mounted) return;
+      }
     }
 
     final result = await ref.read(servicesControllerProvider.notifier).executeServiceAction(

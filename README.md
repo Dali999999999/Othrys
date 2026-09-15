@@ -83,7 +83,7 @@ Remote server administration has traditionally forced engineering teams into an 
 - **Full Keyboard Navigation**: Up, Down, Enter, and Esc bindings.
 
 ### 🔒 Enterprise-Grade Security
-- **AES-256-GCM Encryption Vault**: All passwords and private keys stored at rest are encrypted using authenticated AES-256-GCM with PBKDF2 (100,000 iterations).
+- **AES-256-GCM Encryption Vault**: All passwords and private keys stored at rest are encrypted using authenticated AES-256-GCM with PBKDF2 (100,000 iterations) per-record key diversification and OS-level secure storage (DPAPI/Keychain/Keystore).
 - **Strict Host Key Verification (TOFU)**: Trust-On-First-Use encrypted `known_hosts` store detecting Man-in-the-Middle (MITM) attacks and host key mutations.
 - **Command Sanitizer**: Strict whitelist and parameter escaping on remote command executions.
 - **Zero Silent Catches**: Swallowing exceptions is forbidden; every error is typed, logged, and surfaced appropriately.
@@ -169,7 +169,7 @@ flutter pub get
 # Verify 0 analysis errors and warnings
 flutter analyze --fatal-infos --fatal-warnings
 
-# Execute the automated test suite (110+ tests)
+# Execute the automated test suite (220+ tests)
 flutter test
 ```
 
@@ -189,7 +189,7 @@ The compiled standalone executable and asset bundles will be generated in:
 
 ## ⚙️ Security & Cryptographic Posture
 
-- **Cryptographic Key Derivation**: Master keys are derived on the client machine using PBKDF2 with 100,000 iterations and a cryptographically secure random salt (CSPRNG).
+- **Cryptographic Key Architecture**: The 256-bit master key is generated via CSPRNG and persisted in OS-level protected credential storage (Windows DPAPI, macOS/iOS Keychain, Android Keystore, Linux Secret Service). Per-record subkeys are diversified using PBKDF2 with HMAC-SHA256 (100,000 iterations) and cryptographically random salts.
 - **Supported SSH Credentials**:
   - OpenSSH and PEM formats: Ed25519 (recommended), RSA, and ECDSA.
   - Passphrase-protected private keys with on-demand decryption.

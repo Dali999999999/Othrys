@@ -5,7 +5,7 @@ import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import '../../core/models/file_entry_entity.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/result.dart';
@@ -32,27 +32,26 @@ class FileManagerState {
     List<FileEntryEntity>? items,
     bool? isLoading,
     String? error,
-  }) {
-    return FileManagerState(
-      currentPath: currentPath ?? this.currentPath,
-      items: items ?? this.items,
-      isLoading: isLoading ?? this.isLoading,
-      error: error,
-    );
-  }
+  }) =>
+      FileManagerState(
+        currentPath: currentPath ?? this.currentPath,
+        items: items ?? this.items,
+        isLoading: isLoading ?? this.isLoading,
+        error: error,
+      );
 }
 
-/// Controller encapsulating SFTP operations, security guards, and activity audits.
+/// Controller managing SFTP operations: navigation, file inspection, downloads, uploads, and deletions.
 class FileManagerController extends StateNotifier<FileManagerState> {
-  static const int maxEditableFileBytes = 1024 * 1024; // 1 MB guard
-  static const int maxTransferBytes = 100 * 1024 * 1024; // 100 MB guard
+  static const int maxTransferBytes = 100 * 1024 * 1024; // 100 MB safety limit
+  static const int maxEditableFileBytes = 1024 * 1024; // 1 MB safety limit for inline editing
   static const List<String> binaryExtensions = [
     '.zip', '.tar', '.gz', '.tgz', '.bz2', '.7z', '.bin', '.exe',
     '.iso', '.so', '.dll', '.dylib', '.db', '.sqlite', '.png',
     '.jpg', '.jpeg', '.gif', '.webp', '.ico', '.pdf', '.mp4', '.mkv',
   ];
 
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final ActivityService? activityService;
 
   FileManagerController({
@@ -322,16 +321,38 @@ class FileManagerController extends StateNotifier<FileManagerState> {
     try {
       final sftp = await sshManager.getSftp(sessionId);
       final remoteFile = await sftp.open(item.path);
+      final stat = await remoteFile.stat();
+      final actualSize = stat.size ?? item.size;
+      if (actualSize > maxTransferBytes) {
+        await remoteFile.close();
+        return const Failure('File size exceeds the 100 MB download limit.');
+      }
+
       final localFile = File(localDestinationPath);
       final sink = localFile.openWrite();
 
-      await remoteFile.downloadTo(
-        sink,
-        closeDestination: true,
-        onProgress: (bytesRead) {
-          onProgress?.call(bytesRead, item.size);
-        },
-      );
+      try {
+        await remoteFile.downloadTo(
+          sink,
+          closeDestination: true,
+          onProgress: (bytesRead) {
+            if (bytesRead > maxTransferBytes) {
+              throw Exception('File download exceeded maximum transfer limit of 100 MB.');
+            }
+            onProgress?.call(bytesRead, actualSize);
+          },
+        );
+      } catch (streamErr) {
+        await remoteFile.close();
+        if (await localFile.exists()) {
+          try {
+            await localFile.delete();
+          } catch (delErr) {
+            AppLogger.instance.warn('FileManagerController', 'Could not delete partial download: $delErr');
+          }
+        }
+        rethrow;
+      }
       await remoteFile.close();
 
       if (server != null) {

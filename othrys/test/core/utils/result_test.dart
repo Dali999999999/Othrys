@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/utils/result.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/utils/result.dart';
 
 void main() {
   group('Result<T>', () {

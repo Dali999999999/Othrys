@@ -160,7 +160,7 @@ class MainShellView extends ConsumerStatefulWidget {
 
 class _MainShellViewState extends ConsumerState<MainShellView> {
   AppTab _selectedTab = AppTab.servers;
-  late final SSHSessionManager _sshManager;
+  late final ISSHSessionManager _sshManager;
 
   @override
   void initState() {

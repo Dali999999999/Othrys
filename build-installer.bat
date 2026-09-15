@@ -12,7 +12,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo [2/4] Preparing and signing binaries...
-copy /y build\windows\x64\runner\Release\vpsmanager.exe build\windows\x64\runner\Release\othrys.exe >nul
+if exist build\windows\x64\runner\Release\vpsmanager.exe copy /y build\windows\x64\runner\Release\vpsmanager.exe build\windows\x64\runner\Release\othrys.exe >nul
 powershell -ExecutionPolicy Bypass -File "%~dp0sign_binaries.ps1"
 
 echo [3/4] Building Inno Setup Installer...

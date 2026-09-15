@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/services/app_update_service.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/services/app_update_service.dart';
 
 void main() {
   group('AppUpdateService - Version Comparison Unit Tests', () {

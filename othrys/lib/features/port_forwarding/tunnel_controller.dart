@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/tunnel_entity.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/network/tunnel_manager.dart';
 import '../../core/repositories/tunnel_repository.dart';
 import '../../core/services/activity_service.dart';
@@ -41,7 +41,7 @@ class TunnelState {
 
 class TunnelController extends StateNotifier<TunnelState> {
   final TunnelRepository repository;
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final TunnelManager tunnelManager;
   final ActivityService? activityService;
 

@@ -1,7 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/server_entity.dart';
 import '../../core/models/activity_log_entity.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/active_ssh_session.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/repositories/server_repository.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/result.dart';
@@ -51,7 +52,7 @@ class ServerState {
 /// Feature controller managing servers lifecycle, connection states, and persistence.
 class ServerController extends StateNotifier<ServerState> {
   final ServerRepository repository;
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final ActivityService? activityService;
 
   ServerController({

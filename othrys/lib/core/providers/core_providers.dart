@@ -22,7 +22,7 @@ final localStorageProvider = Provider<LocalStorageService>((ref) {
   return LocalStorageService.instance;
 });
 
-final sshSessionManagerProvider = Provider<SSHSessionManager>((ref) {
+final sshSessionManagerProvider = Provider<ISSHSessionManager>((ref) {
   return SSHSessionManager.instance;
 });
 

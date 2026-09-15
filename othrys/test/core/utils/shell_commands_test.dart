@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/utils/shell_commands.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/utils/shell_commands.dart';
 
 void main() {
   test('ShellCommands.systemOverview uses precise byte metrics', () {

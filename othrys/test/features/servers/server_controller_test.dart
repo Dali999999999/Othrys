@@ -1,11 +1,11 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/network/ssh_session_manager.dart';
-import 'package:vpsmanager/core/repositories/server_repository.dart';
-import 'package:vpsmanager/core/services/activity_service.dart';
-import 'package:vpsmanager/core/repositories/activity_repository.dart';
-import 'package:vpsmanager/core/models/activity_log_entity.dart';
-import 'package:vpsmanager/core/utils/result.dart';
-import 'package:vpsmanager/features/servers/server_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/network/ssh_session_manager.dart';
+import 'package:othrys/core/repositories/server_repository.dart';
+import 'package:othrys/core/services/activity_service.dart';
+import 'package:othrys/core/repositories/activity_repository.dart';
+import 'package:othrys/core/models/activity_log_entity.dart';
+import 'package:othrys/core/utils/result.dart';
+import 'package:othrys/features/servers/server_controller.dart';
 
 class FakeServerRepository implements ServerRepository {
   final List<ServerEntity> storage = [];

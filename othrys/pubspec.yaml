@@ -1,4 +1,4 @@
-name: vpsmanager
+name: othrys
 description: "Industrial-grade DevOps desktop suite for Linux VPS management, built with Flutter and Windows 11 Native Fluent UI."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/system_stats_entity.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/providers/core_providers.dart';
 import '../../core/utils/logger.dart';
 
@@ -19,7 +19,7 @@ class ParsedTelemetry {
   });
 }
 
-/// State representation for live system resource metrics.
+/// State representation for live system monitoring dashboard.
 class MonitoringState {
   final SystemOverview overview;
   final List<FlSpot> cpuHistory;
@@ -58,7 +58,7 @@ class MonitoringState {
 
 /// Controller managing polling lifecycle and metric trend buffers for a target VPS.
 class MonitoringController extends StateNotifier<MonitoringState> {
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   Timer? _pollingTimer;
   String? _currentSessionId;
   int? _prevCpuTotal;

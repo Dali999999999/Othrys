@@ -1,9 +1,9 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/network/is_ssh_session_manager.dart';
-import 'package:vpsmanager/core/services/systemd_service.dart';
-import 'package:vpsmanager/features/services/services_controller.dart' show ServiceDefinition;
+import 'package:othrys/core/network/is_ssh_session_manager.dart';
+import 'package:othrys/core/services/systemd_service.dart';
+import 'package:othrys/features/services/services_controller.dart' show ServiceDefinition;
 
 class _MockSSHSessionManager extends Fake implements ISSHSessionManager {
   final List<String> executedCommands = [];

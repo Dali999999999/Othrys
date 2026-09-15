@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/features/git/git_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/features/git/git_controller.dart';
 
 void main() {
   group('GitController - Parsers', () {

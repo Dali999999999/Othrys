@@ -1,11 +1,11 @@
-import 'package:fluent_ui/fluent_ui.dart';
+﻿import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/app/theme/app_colors.dart';
-import 'package:vpsmanager/app/theme/app_typography.dart';
-import 'package:vpsmanager/app/theme/app_spacing.dart';
-import 'package:vpsmanager/app/theme/app_radius.dart';
-import 'package:vpsmanager/app/theme/app_icons.dart';
-import 'package:vpsmanager/app/theme/app_dialog_sizes.dart';
+import 'package:othrys/app/theme/app_colors.dart';
+import 'package:othrys/app/theme/app_typography.dart';
+import 'package:othrys/app/theme/app_spacing.dart';
+import 'package:othrys/app/theme/app_radius.dart';
+import 'package:othrys/app/theme/app_icons.dart';
+import 'package:othrys/app/theme/app_dialog_sizes.dart';
 
 void main() {
   group('Design System Tokens', () {

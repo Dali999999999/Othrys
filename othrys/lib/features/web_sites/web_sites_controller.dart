@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/web_site_entity.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/security/command_sanitizer.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/logger.dart';
@@ -48,7 +48,7 @@ class WebSitesState {
 
 /// Controller orchestrating Nginx virtual hosts, reverse proxies, and Certbot SSL certificates.
 class WebSitesController extends StateNotifier<WebSitesState> {
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final ActivityService? activityService;
 
   WebSitesController({
@@ -132,10 +132,11 @@ class WebSitesController extends StateNotifier<WebSitesState> {
 
       for (final file in files) {
         bool isEnabled = false;
+        final escapedFile = CommandSanitizer.escapeArg(file);
         try {
           final symlinkCheck = await sshManager.executeCommand(
             sessionId,
-            'test -L /etc/nginx/sites-enabled/$file && echo "YES" || true',
+            'test -L /etc/nginx/sites-enabled/$escapedFile && echo "YES" || true',
           );
           isEnabled = symlinkCheck.trim() == 'YES';
         } catch (e) {
@@ -146,7 +147,7 @@ class WebSitesController extends StateNotifier<WebSitesState> {
         try {
           content = await sshManager.executeCommand(
             sessionId,
-            'cat /etc/nginx/sites-available/$file 2>/dev/null || true',
+            'cat /etc/nginx/sites-available/$escapedFile 2>/dev/null || true',
           );
         } catch (e) {
           AppLogger.instance.warn('WebSitesController', 'Could not read content for $file: $e');
@@ -235,7 +236,10 @@ server {
     ServerEntity? server,
   }) async {
     try {
-      final sanitizedDomain = CommandSanitizer.sanitizeIdentifier(site.domain.replaceAll('.', '_')).replaceAll('_', '.');
+      if (!CommandSanitizer.isValidHostname(site.domain)) {
+        return Failure('Invalid domain name: "${site.domain}"');
+      }
+      final sanitizedDomain = site.domain.trim();
       final configFile = '/etc/nginx/sites-available/$sanitizedDomain';
       final configContent = generateNginxConfig(site);
 

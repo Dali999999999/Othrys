@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/docker_container_entity.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
+import '../../core/security/command_sanitizer.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/result.dart';
@@ -57,7 +58,7 @@ class DockerState {
 
 /// Controller managing remote Docker container discovery, compose, and lifecycle commands.
 class DockerController extends StateNotifier<DockerState> {
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final ActivityService? activityService;
 
   DockerController({
@@ -156,13 +157,7 @@ class DockerController extends StateNotifier<DockerState> {
     }
 
     for (final token in parts) {
-      if (token.contains(';') ||
-          token.contains('&') ||
-          token.contains('|') ||
-          token.contains('`') ||
-          token.contains(r'$') ||
-          token.contains('\n') ||
-          token.contains('\r')) {
+      if (!CommandSanitizer.isValidComposeToken(token)) {
         return Failure('Dangerous token detected in compose argument: "$token"');
       }
     }

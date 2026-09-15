@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/activity_log_entity.dart';
 import '../../core/models/server_admin_entities.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/security/command_sanitizer.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/logger.dart';
@@ -51,7 +51,7 @@ class ServerAdminState {
 
 /// Controller orchestrating UFW firewall, listening ports, user accounts, and system updates.
 class ServerAdminController extends StateNotifier<ServerAdminState> {
-  final SSHSessionManager _ssh;
+  final ISSHSessionManager _ssh;
   final ActivityService? _activity;
 
   ServerAdminController(this._ssh, this._activity) : super(const ServerAdminState());
@@ -170,7 +170,10 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
     }
   }
 
-  /// Adds a new UFW firewall rule.
+  static const Set<String> _allowedFirewallActions = {'allow', 'deny', 'reject', 'limit'};
+  static const Set<String> _allowedFirewallProtos = {'tcp', 'udp'};
+
+  /// Adds a new UFW firewall rule with strict validation and safe command execution.
   Future<Result<void>> addFirewallRule(
     String sessionId, {
     required String port,
@@ -180,19 +183,42 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
     ServerEntity? server,
   }) async {
     try {
-      final safePort = port.replaceAll(' ', '').trim();
-      final safeProto = proto.toLowerCase().trim();
       final safeAction = action.toLowerCase().trim();
-
-      String cmd;
-      if (sourceIp != null && sourceIp.trim().isNotEmpty && sourceIp.trim().toLowerCase() != 'anywhere') {
-        final cleanIp = sourceIp.trim();
-        cmd = 'sudo ufw $safeAction proto $safeProto from \'$cleanIp\' to any port $safePort';
-      } else {
-        cmd = 'sudo ufw $safeAction $safePort/$safeProto';
+      if (!_allowedFirewallActions.contains(safeAction)) {
+        return Failure('Invalid firewall action: "$action". Allowed: ${_allowedFirewallActions.join(", ")}');
       }
 
-      await _ssh.executeCommand(sessionId, cmd);
+      final safeProto = proto.toLowerCase().trim();
+      if (!_allowedFirewallProtos.contains(safeProto)) {
+        return Failure('Invalid firewall protocol: "$proto". Allowed: ${_allowedFirewallProtos.join(", ")}');
+      }
+
+      final safePort = port.replaceAll(' ', '').trim();
+      if (!CommandSanitizer.isValidPortOrRange(safePort)) {
+        return Failure('Invalid firewall port or range: "$port". Must be 1-65535 or range start:end.');
+      }
+
+      final hasSourceIp = sourceIp != null &&
+          sourceIp.trim().isNotEmpty &&
+          sourceIp.trim().toLowerCase() != 'anywhere';
+
+      if (hasSourceIp) {
+        final cleanIp = sourceIp.trim();
+        if (!CommandSanitizer.isValidIpOrCidr(cleanIp)) {
+          return Failure('Invalid firewall source IP or CIDR: "$sourceIp"');
+        }
+        await _ssh.executeSafeCommand(
+          sessionId,
+          'sudo',
+          ['ufw', safeAction, 'proto', safeProto, 'from', cleanIp, 'to', 'any', 'port', safePort],
+        );
+      } else {
+        await _ssh.executeSafeCommand(
+          sessionId,
+          'sudo',
+          ['ufw', safeAction, '$safePort/$safeProto'],
+        );
+      }
 
       if (server != null && _activity != null) {
         _activity.logCustomAction(
@@ -208,7 +234,7 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
     }
   }
 
-  /// Deletes an existing UFW rule by number.
+  /// Deletes an existing UFW rule by number safely.
   Future<Result<void>> deleteFirewallRule(String sessionId, int ruleNumber, {ServerEntity? server}) async {
     final prevFirewall = state.firewall;
     // Optimistically remove the rule from state
@@ -217,7 +243,11 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
       firewall: prevFirewall.copyWith(rules: updatedRules),
     );
     try {
-      await _ssh.executeCommand(sessionId, 'echo "y" | sudo ufw delete $ruleNumber');
+      await _ssh.executeSafeCommand(
+        sessionId,
+        'sudo',
+        ['ufw', '--force', 'delete', ruleNumber.toString()],
+      );
 
       if (server != null && _activity != null) {
         _activity.logCustomAction(

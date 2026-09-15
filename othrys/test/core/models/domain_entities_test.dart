@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/models/docker_container_entity.dart';
-import 'package:vpsmanager/core/models/service_entry_entity.dart';
-import 'package:vpsmanager/core/models/file_entry_entity.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/models/docker_container_entity.dart';
+import 'package:othrys/core/models/service_entry_entity.dart';
+import 'package:othrys/core/models/file_entry_entity.dart';
 
 void main() {
   group('Domain Entities (Phase 2.1)', () {

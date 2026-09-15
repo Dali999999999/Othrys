@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/network/ssh_session_manager.dart';
-import 'package:vpsmanager/core/utils/result.dart';
-import 'package:vpsmanager/features/server_admin/server_admin_controller.dart';
+import 'package:othrys/core/network/ssh_session_manager.dart';
+import 'package:othrys/core/utils/result.dart';
+import 'package:othrys/features/server_admin/server_admin_controller.dart';
 
 class _MockSSHSessionManager extends Fake implements SSHSessionManager {
   final List<String> executedCommands = [];
@@ -149,7 +149,7 @@ wheel:x:10:
     test('deleteFirewallRule executes forced ufw delete', () async {
       final res = await controller.deleteFirewallRule('sess-1', 2);
       expect(res, isA<Success>());
-      expect(mockSsh.executedCommands.any((c) => c.contains('sudo ufw delete 2')), isTrue);
+      expect(mockSsh.executedCommands.any((c) => c.contains('sudo ufw') && c.contains('--force delete 2')), isTrue);
     });
 
     test('deleteSystemUser rejects deleting root account', () async {
@@ -222,6 +222,58 @@ wheel:x:10:
       final resColon = await controller.createSystemUser('sess-1', 'david', 'bad:password');
       expect(resColon, isA<Failure>());
       expect((resColon as Failure).message, contains('colon'));
+    });
+
+    test('addFirewallRule executes safely for valid port and action', () async {
+      final res = await controller.addFirewallRule('sess-1', port: '80', proto: 'tcp', action: 'allow');
+      expect(res, isA<Success>());
+      expect(mockSsh.executedCommands.any((c) => c.contains('sudo ufw allow 80/tcp')), isTrue);
+    });
+
+    test('addFirewallRule executes safely with valid source IP', () async {
+      final res = await controller.addFirewallRule(
+        'sess-1',
+        port: '22',
+        proto: 'tcp',
+        action: 'allow',
+        sourceIp: '192.168.1.50',
+      );
+      expect(res, isA<Success>());
+      expect(
+        mockSsh.executedCommands.any((c) => c.contains('sudo ufw allow proto tcp from 192.168.1.50 to any port 22')),
+        isTrue,
+      );
+    });
+
+    test('addFirewallRule rejects malicious port injection (C1 prevention)', () async {
+      final res = await controller.addFirewallRule('sess-1', port: '22; rm -rf /', proto: 'tcp', action: 'allow');
+      expect(res, isA<Failure>());
+      expect((res as Failure).message, contains('Invalid firewall port'));
+      expect(mockSsh.executedCommands.any((c) => c.contains('rm -rf')), isFalse);
+    });
+
+    test('addFirewallRule rejects malicious action injection', () async {
+      final res = await controller.addFirewallRule('sess-1', port: '80', proto: 'tcp', action: 'allow; reboot');
+      expect(res, isA<Failure>());
+      expect((res as Failure).message, contains('Invalid firewall action'));
+    });
+
+    test('addFirewallRule rejects malicious source IP injection', () async {
+      final res = await controller.addFirewallRule(
+        'sess-1',
+        port: '80',
+        proto: 'tcp',
+        action: 'allow',
+        sourceIp: "192.168.1.1' || reboot",
+      );
+      expect(res, isA<Failure>());
+      expect((res as Failure).message, contains('Invalid firewall source IP'));
+    });
+
+    test('deleteFirewallRule uses non-interactive --force flag with safe command', () async {
+      final res = await controller.deleteFirewallRule('sess-1', 3);
+      expect(res, isA<Success>());
+      expect(mockSsh.executedCommands.any((c) => c.contains('sudo ufw --force delete 3')), isTrue);
     });
   });
 }

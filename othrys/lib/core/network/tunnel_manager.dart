@@ -32,6 +32,7 @@ class TunnelManager {
   final Map<String, ServerSocket> _activeSockets = {};
   final Map<String, SSHRemoteForward> _activeRemoteForwards = {};
   final Map<String, SSHDynamicForward> _activeDynamicForwards = {};
+  final Map<String, TunnelEntity> _activeTunnels = {};
   final Map<String, TunnelStatus> _statuses = {};
   final Map<String, String> _errorMessages = {};
   final Map<String, TunnelMetrics> _metrics = {};
@@ -61,23 +62,38 @@ class TunnelManager {
 
     _metrics[tunnel.id] = TunnelMetrics();
 
+    final Result<int> result;
     switch (tunnel.type) {
       case TunnelType.local:
-        return _openLocalTunnel(tunnel, client);
+        result = await _openLocalTunnel(tunnel, client);
+        break;
       case TunnelType.remote:
-        return _openRemoteTunnel(tunnel, client);
+        result = await _openRemoteTunnel(tunnel, client);
+        break;
       case TunnelType.dynamic:
-        return _openDynamicTunnel(tunnel, client);
+        result = await _openDynamicTunnel(tunnel, client);
+        break;
     }
+
+    if (result.isSuccess) {
+      _activeTunnels[tunnel.id] = tunnel;
+    }
+    return result;
   }
 
   /// Opens a local port-forwarding tunnel bound to a local socket.
   Future<Result<int>> _openLocalTunnel(TunnelEntity tunnel, SSHClient client) async {
     try {
-      final bindHost = tunnel.bindAddress.isNotEmpty ? tunnel.bindAddress : '127.0.0.1';
-      final address = InternetAddress.tryParse(bindHost) ?? InternetAddress.loopbackIPv4;
+      final rawHost = tunnel.bindAddress.trim();
+      final bindHost = rawHost.isEmpty ? '127.0.0.1' : rawHost;
+      final address = InternetAddress.tryParse(bindHost);
+      final isLoopback = (address != null && address.isLoopback) || bindHost == 'localhost';
+      if (!isLoopback) {
+        return Failure('Security violation: tunnel bindAddress must be a local loopback address (127.0.0.1, ::1, localhost). Rejected: "$bindHost"');
+      }
+      final resolvedAddress = address ?? InternetAddress.loopbackIPv4;
 
-      final serverSocket = await ServerSocket.bind(address, tunnel.localPort);
+      final serverSocket = await ServerSocket.bind(resolvedAddress, tunnel.localPort);
       final assignedPort = serverSocket.port;
 
       serverSocket.listen(
@@ -151,7 +167,13 @@ class TunnelManager {
   /// Opens a remote port-forwarding tunnel bound on the remote host.
   Future<Result<int>> _openRemoteTunnel(TunnelEntity tunnel, SSHClient client) async {
     try {
-      final bindHost = tunnel.bindAddress.isNotEmpty ? tunnel.bindAddress : '127.0.0.1';
+      final rawHost = tunnel.bindAddress.trim();
+      final bindHost = rawHost.isEmpty ? '127.0.0.1' : rawHost;
+      final address = InternetAddress.tryParse(bindHost);
+      final isLoopback = (address != null && address.isLoopback) || bindHost == 'localhost';
+      if (!isLoopback) {
+        return Failure('Security violation: tunnel bindAddress must be a loopback address (127.0.0.1, ::1, localhost). Rejected: "$bindHost"');
+      }
       final remoteForward = await client.forwardRemote(
         host: bindHost,
         port: tunnel.remotePort,
@@ -234,7 +256,13 @@ class TunnelManager {
   /// Opens a dynamic SOCKS5 proxy tunnel bound to a local socket.
   Future<Result<int>> _openDynamicTunnel(TunnelEntity tunnel, SSHClient client) async {
     try {
-      final bindHost = tunnel.bindAddress.isNotEmpty ? tunnel.bindAddress : '127.0.0.1';
+      final rawHost = tunnel.bindAddress.trim();
+      final bindHost = rawHost.isEmpty ? '127.0.0.1' : rawHost;
+      final address = InternetAddress.tryParse(bindHost);
+      final isLoopback = (address != null && address.isLoopback) || bindHost == 'localhost';
+      if (!isLoopback) {
+        return Failure('Security violation: tunnel bindAddress must be a local loopback address (127.0.0.1, ::1, localhost). Rejected: "$bindHost"');
+      }
       final dynamicForward = await client.forwardDynamic(
         bindHost: bindHost,
         bindPort: tunnel.localPort,
@@ -260,6 +288,7 @@ class TunnelManager {
 
   /// Closes an active tunnel and releases network resources.
   Future<Result<void>> closeTunnel(String tunnelId) async {
+    _activeTunnels.remove(tunnelId);
     final socket = _activeSockets.remove(tunnelId);
     if (socket != null) {
       try {
@@ -281,7 +310,7 @@ class TunnelManager {
     final dynamicForward = _activeDynamicForwards.remove(tunnelId);
     if (dynamicForward != null) {
       try {
-        await dynamicForward.close();
+        dynamicForward.close();
       } catch (e) {
         AppLogger.instance.warn('TunnelManager', 'Error closing dynamic forward for tunnel $tunnelId: $e');
       }
@@ -292,8 +321,29 @@ class TunnelManager {
     return const Success(null);
   }
 
+  /// Reliability Watchdog: automatically restores all previously active tunnels for [serverId]
+  /// using the reconnected [client].
+  Future<List<Result<int>>> restoreTunnelsForServer(String serverId, SSHClient client) async {
+    final toRestore = _activeTunnels.values.where((t) => t.serverId == serverId).toList();
+    if (toRestore.isEmpty) return const [];
+
+    AppLogger.instance.info('TunnelManager', 'Watchdog: Restoring ${toRestore.length} tunnels for server $serverId');
+    final results = <Result<int>>[];
+    for (final tunnel in toRestore) {
+      final res = await openTunnel(tunnel, client);
+      results.add(res);
+      if (res.isSuccess) {
+        AppLogger.instance.info('TunnelManager', 'Watchdog: Successfully restored tunnel "${tunnel.name}"');
+      } else {
+        AppLogger.instance.warn('TunnelManager', 'Watchdog: Failed to restore tunnel "${tunnel.name}": ${res.failureOrNull?.message}');
+      }
+    }
+    return results;
+  }
+
   /// Closes all active tunnels and resets status maps.
   Future<void> dispose() async {
+    _activeTunnels.clear();
     for (final socket in _activeSockets.values) {
       try {
         await socket.close();
@@ -314,7 +364,7 @@ class TunnelManager {
 
     for (final dynamicForward in _activeDynamicForwards.values) {
       try {
-        await dynamicForward.close();
+        dynamicForward.close();
       } catch (e) {
         AppLogger.instance.warn('TunnelManager', 'Error closing dynamic forward during dispose: $e');
       }

@@ -1,15 +1,15 @@
-import 'package:fluent_ui/fluent_ui.dart';
+﻿import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/app/theme/app_colors.dart';
-import 'package:vpsmanager/shared/widgets/app_badge.dart';
-import 'package:vpsmanager/shared/widgets/app_card.dart';
-import 'package:vpsmanager/shared/widgets/app_console_box.dart';
-import 'package:vpsmanager/shared/widgets/app_empty_state.dart';
-import 'package:vpsmanager/shared/widgets/app_metric_card.dart';
-import 'package:vpsmanager/shared/widgets/app_section_card.dart';
-import 'package:vpsmanager/shared/widgets/app_shortcut_badge.dart';
-import 'package:vpsmanager/shared/widgets/app_status_dot.dart';
-import 'package:vpsmanager/shared/widgets/app_brand_mark.dart';
+import 'package:othrys/app/theme/app_colors.dart';
+import 'package:othrys/shared/widgets/app_badge.dart';
+import 'package:othrys/shared/widgets/app_card.dart';
+import 'package:othrys/shared/widgets/app_console_box.dart';
+import 'package:othrys/shared/widgets/app_empty_state.dart';
+import 'package:othrys/shared/widgets/app_metric_card.dart';
+import 'package:othrys/shared/widgets/app_section_card.dart';
+import 'package:othrys/shared/widgets/app_shortcut_badge.dart';
+import 'package:othrys/shared/widgets/app_status_dot.dart';
+import 'package:othrys/shared/widgets/app_brand_mark.dart';
 
 void main() {
   group('Design System Atomic & Molecular Components', () {

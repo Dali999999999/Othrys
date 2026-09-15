@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/enums/auth_method.dart';
-import 'package:vpsmanager/core/enums/connection_state.dart';
-import 'package:vpsmanager/core/enums/tunnel_type.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/enums/auth_method.dart';
+import 'package:othrys/core/enums/connection_state.dart';
+import 'package:othrys/core/enums/tunnel_type.dart';
 
 void main() {
   group('AuthMethod', () {

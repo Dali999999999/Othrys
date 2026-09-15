@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/models/activity_log_entity.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/models/activity_log_entity.dart';
 
 void main() {
   group('ActivityLogEntity', () {

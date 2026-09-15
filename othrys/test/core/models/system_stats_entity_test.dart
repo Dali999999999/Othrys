@@ -1,5 +1,5 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/models/system_stats_entity.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/models/system_stats_entity.dart';
 
 void main() {
   group('SystemOverview', () {

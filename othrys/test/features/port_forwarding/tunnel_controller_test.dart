@@ -1,13 +1,13 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/enums/connection_state.dart';
-import 'package:vpsmanager/core/models/server_entity.dart';
-import 'package:vpsmanager/core/network/ssh_session_manager.dart';
-import 'package:vpsmanager/core/repositories/tunnel_repository.dart';
-import 'package:vpsmanager/core/utils/result.dart';
-import 'package:vpsmanager/features/port_forwarding/tunnel_controller.dart';
+import 'package:othrys/core/enums/connection_state.dart';
+import 'package:othrys/core/models/server_entity.dart';
+import 'package:othrys/core/network/ssh_session_manager.dart';
+import 'package:othrys/core/repositories/tunnel_repository.dart';
+import 'package:othrys/core/utils/result.dart';
+import 'package:othrys/features/port_forwarding/tunnel_controller.dart';
 
 class FakeTunnelRepository implements TunnelRepository {
   final List<TunnelEntity> tunnels = [];

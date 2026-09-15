@@ -1,5 +1,7 @@
+import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/network/tunnel_manager.dart';
+import 'package:othrys/core/models/tunnel_entity.dart';
+import 'package:othrys/core/network/tunnel_manager.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -45,4 +47,29 @@ void main() {
     expect(metrics.bytesTransmitted, equals(1024));
     expect(metrics.bytesReceived, equals(4096));
   });
+
+  test('TunnelManager rejects non-loopback bindAddress for security', () async {
+    const dangerousTunnel = TunnelEntity(
+      id: 'tun-evil',
+      serverId: 'srv-1',
+      name: 'Exposed Tunnel',
+      type: TunnelType.local,
+      bindAddress: '0.0.0.0',
+      localPort: 8080,
+      remoteHost: '127.0.0.1',
+      remotePort: 80,
+    );
+
+    // openTunnel without client connection should fail at bind validation immediately
+    final res = await manager.openTunnel(dangerousTunnel, FakeSSHClient());
+    expect(res.isFailure, isTrue);
+    expect(res.failureOrNull?.message, contains('Security violation'));
+  });
+
+  test('restoreTunnelsForServer handles empty active tunnels cleanly', () async {
+    final results = await manager.restoreTunnelsForServer('srv-nonexistent', FakeSSHClient());
+    expect(results, isEmpty);
+  });
 }
+
+class FakeSSHClient extends Fake implements SSHClient {}

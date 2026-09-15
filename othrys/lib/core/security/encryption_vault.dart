@@ -6,6 +6,16 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../utils/result.dart';
 
 /// Cryptographic vault responsible for zero-leak local encryption of sensitive credentials.
+///
+/// Threat model & architecture:
+/// - Master key: A 256-bit cryptographically secure random key (CSPRNG) generated via
+///   [AesGcm.newSecretKey] and persisted securely in operating system-level credential storage
+///   (Windows DPAPI, macOS/iOS Keychain, Android Keystore, Linux Secret Service).
+/// - Key diversification: Per-record subkeys are derived using [Pbkdf2] with HMAC-SHA256,
+///   100,000 iterations, and a fresh cryptographically random 16-byte salt per encryption operation.
+/// - Authenticated encryption: Payloads are encrypted with [AesGcm.with256bits] using a fresh 96-bit
+///   nonce per operation. Serialized format: `saltHex:nonceHex:cipherTextHex:macHex`.
+/// - Memory safety: Zeroization of master key bytes in RAM on application shutdown via [zeroize].
 class EncryptionVault {
   static final EncryptionVault instance = EncryptionVault();
   final FlutterSecureStorage _secureStorage;

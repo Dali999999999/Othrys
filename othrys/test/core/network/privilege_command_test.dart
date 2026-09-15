@@ -1,10 +1,10 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/enums/connection_state.dart';
-import 'package:vpsmanager/core/models/server_entity.dart';
-import 'package:vpsmanager/core/network/ssh_session_manager.dart';
+import 'package:othrys/core/enums/connection_state.dart';
+import 'package:othrys/core/models/server_entity.dart';
+import 'package:othrys/core/network/ssh_session_manager.dart';
 
 class _FakeSSHSocket implements SSHSocket {
   final _controller = StreamController<Uint8List>.broadcast();

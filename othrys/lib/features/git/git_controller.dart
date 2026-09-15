@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/models/activity_log_entity.dart';
 import '../../core/models/git_entities.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/security/command_sanitizer.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/services/settings_service.dart';
@@ -17,7 +17,7 @@ import 'git_state.dart';
 /// Controller orchestrating Git installation, repository discovery, branch switching,
 /// status tracking, pulls, and deploy keys.
 class GitController extends StateNotifier<GitState> {
-  final SSHSessionManager _ssh;
+  final ISSHSessionManager _ssh;
   final ActivityService? _activity;
   final SharedPreferences? _prefs;
 
@@ -375,9 +375,16 @@ class GitController extends StateNotifier<GitState> {
   Future<Result<void>> checkoutBranch(String sessionId, String repoPath, String branch, {ServerEntity? server}) async {
     _safeSetState((s) => s.copyWith(isLoading: true, clearError: true));
     try {
+      final trimmedBranch = branch.trim();
+      if (trimmedBranch.startsWith('-')) {
+        return Failure('Invalid branch name starts with hyphen: "$branch"');
+      }
+      final safeBranch = trimmedBranch.replaceAll(RegExp(r'[^a-zA-Z0-9._/-]'), '');
+      if (safeBranch.isEmpty || safeBranch.startsWith('-')) {
+        return Failure('Invalid branch name: "$branch"');
+      }
       final safeRepo = CommandSanitizer.escapeArg(repoPath);
-      final safeBranch = branch.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._/-]'), '');
-      await _ssh.executeCommand(sessionId, 'cd $safeRepo && git checkout \'$safeBranch\'');
+      await _ssh.executeCommand(sessionId, 'cd $safeRepo && git checkout -- ${CommandSanitizer.escapeArg(safeBranch)}');
 
       if (server != null && _activity != null) {
         _activity.logCustomAction(
@@ -399,9 +406,16 @@ class GitController extends StateNotifier<GitState> {
   Future<Result<void>> createBranch(String sessionId, String repoPath, String newBranch, {ServerEntity? server}) async {
     _safeSetState((s) => s.copyWith(isLoading: true, clearError: true));
     try {
+      final trimmedBranch = newBranch.trim();
+      if (trimmedBranch.startsWith('-')) {
+        return Failure('Invalid branch name starts with hyphen: "$newBranch"');
+      }
+      final safeBranch = trimmedBranch.replaceAll(RegExp(r'[^a-zA-Z0-9._/-]'), '');
+      if (safeBranch.isEmpty || safeBranch.startsWith('-')) {
+        return Failure('Invalid branch name: "$newBranch"');
+      }
       final safeRepo = CommandSanitizer.escapeArg(repoPath);
-      final safeBranch = newBranch.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._/-]'), '');
-      await _ssh.executeCommand(sessionId, 'cd $safeRepo && git checkout -b \'$safeBranch\'');
+      await _ssh.executeCommand(sessionId, 'cd $safeRepo && git checkout -b ${CommandSanitizer.escapeArg(safeBranch)}');
 
       if (server != null && _activity != null) {
         _activity.logCustomAction(
@@ -524,12 +538,19 @@ class GitController extends StateNotifier<GitState> {
       if (shallow) flags.add('--depth 1');
       if (submodules) flags.add('--recurse-submodules');
       if (branch != null && branch.trim().isNotEmpty) {
-        final safeBranch = branch.trim().replaceAll(RegExp(r'[^a-zA-Z0-9._/-]'), '');
-        flags.add('-b \'$safeBranch\'');
+        final rawBranch = branch.trim();
+        if (rawBranch.startsWith('-')) {
+          return Failure('Invalid branch name starts with hyphen: "$branch"');
+        }
+        final safeBranch = rawBranch.replaceAll(RegExp(r'[^a-zA-Z0-9._/-]'), '');
+        if (safeBranch.isEmpty || safeBranch.startsWith('-')) {
+          return Failure('Invalid branch name: "$branch"');
+        }
+        flags.add('-b ${CommandSanitizer.escapeArg(safeBranch)}');
       }
 
       final flagStr = flags.isEmpty ? '' : '${flags.join(' ')} ';
-      final cmd = 'git clone $flagStr$safeUrl $safeDest';
+      final cmd = 'git clone $flagStr-- $safeUrl $safeDest';
 
       await _ssh.executeCommand(sessionId, cmd);
 

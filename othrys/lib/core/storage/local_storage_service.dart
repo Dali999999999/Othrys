@@ -12,7 +12,7 @@ import '../utils/result.dart';
 
 /// Local persistence service managing encrypted servers, activity logs, and settings.
 class LocalStorageService {
-  static final LocalStorageService instance = LocalStorageService();
+  static LocalStorageService instance = LocalStorageService();
   final EncryptionVault _vault;
   final Future<Directory> Function() _storageDirResolver;
 
@@ -25,7 +25,7 @@ class LocalStorageService {
         _storageDirResolver = storageDirResolver ?? getApplicationSupportDirectory;
 
   Future<Directory> get _storageDirectory async {
-    if (_cachedBaseDir != null) return _cachedBaseDir!;
+    if (_cachedBaseDir != null && await _cachedBaseDir!.exists()) return _cachedBaseDir!;
     final baseDir = await _storageDirResolver();
     final othrysDir = Directory(p.join(baseDir.path, 'Othrys'));
     if (!await othrysDir.exists()) {
@@ -275,20 +275,24 @@ class LocalStorageService {
 
   /// Appends an activity log item with 1000 item rolling window.
   Future<void> appendActivityLog(ActivityLogEntity log) => _enqueueWrite(() async {
-    final file = await _activityFile;
-    final List<ActivityLogEntity> logs = [];
-    if (await file.exists()) {
-      try {
-        final content = await file.readAsString();
-        final List<dynamic> jsonList = jsonDecode(content);
-        logs.addAll(jsonList.map((e) => ActivityLogEntity.fromJson(e as Map<String, dynamic>)));
-      } catch (e) {
-        AppLogger.instance.warn('LocalStorage', 'Corrupted activity log entries ignored: $e');
+    try {
+      final file = await _activityFile;
+      final List<ActivityLogEntity> logs = [];
+      if (await file.exists()) {
+        try {
+          final content = await file.readAsString();
+          final List<dynamic> jsonList = jsonDecode(content);
+          logs.addAll(jsonList.map((e) => ActivityLogEntity.fromJson(e as Map<String, dynamic>)));
+        } catch (e) {
+          AppLogger.instance.warn('LocalStorage', 'Corrupted activity log entries ignored: $e');
+        }
       }
+      logs.add(log);
+      final trimmed = logs.length > 1000 ? logs.sublist(logs.length - 1000) : logs;
+      await _atomicWriteLocked(file, const JsonEncoder.withIndent('  ').convert(trimmed.map((e) => e.toJson()).toList()));
+    } catch (e, st) {
+      AppLogger.instance.error('LocalStorage', 'Failed to append activity log: $e', e, st);
     }
-    logs.add(log);
-    final trimmed = logs.length > 1000 ? logs.sublist(logs.length - 1000) : logs;
-    await _atomicWriteLocked(file, const JsonEncoder.withIndent('  ').convert(trimmed.map((e) => e.toJson()).toList()));
   });
 
   /// Clears all stored activity logs.

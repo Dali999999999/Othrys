@@ -1,8 +1,8 @@
-import 'package:fluent_ui/fluent_ui.dart';
+﻿import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/l10n/l10n.dart';
-import 'package:vpsmanager/features/file_manager/widgets/sftp_address_bar.dart';
+import 'package:othrys/core/l10n/l10n.dart';
+import 'package:othrys/features/file_manager/widgets/sftp_address_bar.dart';
 
 Widget createTestApp(Widget child) {
   return FluentApp(

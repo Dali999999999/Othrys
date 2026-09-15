@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/security/command_sanitizer.dart';
+import 'package:othrys/core/security/command_sanitizer.dart';
 
 void main() {
   group('CommandSanitizer (CRITICAL SECURITY)', () {
@@ -113,6 +113,52 @@ void main() {
         () => CommandSanitizer.sanitizePath('/etc/shadow > /tmp/leaked'),
         throwsA(isA<ArgumentError>()),
       );
+    });
+
+    test('rejects identifiers starting with hyphen to prevent option injection', () {
+      expect(() => CommandSanitizer.sanitizeIdentifier('-v'), throwsA(isA<ArgumentError>()));
+      expect(() => CommandSanitizer.sanitizeIdentifier('--help'), throwsA(isA<ArgumentError>()));
+      expect(() => CommandSanitizer.sanitizeIdentifier('--upload-pack=evil'), throwsA(isA<ArgumentError>()));
+      expect(() => CommandSanitizer.sanitizeIdentifier('-rf'), throwsA(isA<ArgumentError>()));
+    });
+
+    test('validates port and port ranges with isValidPortOrRange', () {
+      expect(CommandSanitizer.isValidPortOrRange('80'), isTrue);
+      expect(CommandSanitizer.isValidPortOrRange('443'), isTrue);
+      expect(CommandSanitizer.isValidPortOrRange('8000:8080'), isTrue);
+      expect(CommandSanitizer.isValidPortOrRange('1:65535'), isTrue);
+
+      expect(CommandSanitizer.isValidPortOrRange(''), isFalse);
+      expect(CommandSanitizer.isValidPortOrRange('0'), isFalse);
+      expect(CommandSanitizer.isValidPortOrRange('70000'), isFalse);
+      expect(CommandSanitizer.isValidPortOrRange('8080:8000'), isFalse); // inverted
+      expect(CommandSanitizer.isValidPortOrRange('80; rm -rf /'), isFalse);
+      expect(CommandSanitizer.isValidPortOrRange('22\$(reboot)'), isFalse);
+    });
+
+    test('validates IP addresses and CIDR notations with isValidIpOrCidr', () {
+      expect(CommandSanitizer.isValidIpOrCidr('192.168.1.1'), isTrue);
+      expect(CommandSanitizer.isValidIpOrCidr('10.0.0.0/24'), isTrue);
+      expect(CommandSanitizer.isValidIpOrCidr('::1'), isTrue);
+      expect(CommandSanitizer.isValidIpOrCidr('2001:db8::/32'), isTrue);
+
+      expect(CommandSanitizer.isValidIpOrCidr(''), isFalse);
+      expect(CommandSanitizer.isValidIpOrCidr('192.168.1.1/33'), isFalse);
+      expect(CommandSanitizer.isValidIpOrCidr("192.168.1.1' || reboot"), isFalse);
+      expect(CommandSanitizer.isValidIpOrCidr('not an ip'), isFalse);
+    });
+
+    test('validates docker-compose tokens with isValidComposeToken', () {
+      expect(CommandSanitizer.isValidComposeToken('-d'), isTrue);
+      expect(CommandSanitizer.isValidComposeToken('--build'), isTrue);
+      expect(CommandSanitizer.isValidComposeToken('--scale=web=2'), isTrue);
+      expect(CommandSanitizer.isValidComposeToken('web'), isTrue);
+      expect(CommandSanitizer.isValidComposeToken('docker-compose.yml'), isTrue);
+
+      expect(CommandSanitizer.isValidComposeToken('; rm -rf /'), isFalse);
+      expect(CommandSanitizer.isValidComposeToken('web && reboot'), isFalse);
+      expect(CommandSanitizer.isValidComposeToken('`whoami`'), isFalse);
+      expect(CommandSanitizer.isValidComposeToken(r'$(cat /etc/passwd)'), isFalse);
     });
   });
 }

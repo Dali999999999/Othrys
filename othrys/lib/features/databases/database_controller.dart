@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/database_entities.dart';
-import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/security/command_sanitizer.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/logger.dart';
@@ -41,9 +41,9 @@ class DatabasesState {
     List<DatabaseItem>? databases,
     List<DatabaseUser>? users,
     DatabaseQueryResult? lastQueryResult,
-    bool clearQueryResult = false,
     bool? isLoading,
     String? error,
+    bool clearQueryResult = false,
   }) {
     return DatabasesState(
       selectedEngine: selectedEngine ?? this.selectedEngine,
@@ -60,7 +60,7 @@ class DatabasesState {
 
 /// Controller orchestrating database engines, databases, users, and queries over SSH.
 class DatabasesController extends StateNotifier<DatabasesState> {
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final ActivityService? activityService;
 
   DatabasesController({

@@ -1,7 +1,7 @@
 ﻿import 'package:fluent_ui/fluent_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vpsmanager/core/services/settings_service.dart';
+import 'package:othrys/core/services/settings_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

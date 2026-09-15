@@ -1,8 +1,8 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/repositories/activity_repository.dart';
-import 'package:vpsmanager/core/services/activity_service.dart';
-import 'package:vpsmanager/core/utils/result.dart';
-import 'package:vpsmanager/features/activity/activity_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/repositories/activity_repository.dart';
+import 'package:othrys/core/services/activity_service.dart';
+import 'package:othrys/core/utils/result.dart';
+import 'package:othrys/features/activity/activity_controller.dart';
 
 class FakeActivityRepository implements ActivityRepository {
   final List<ActivityLogEntity> logs = [];

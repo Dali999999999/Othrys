@@ -1,9 +1,9 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/models/activity_log_entity.dart';
-import 'package:vpsmanager/core/repositories/activity_repository.dart';
-import 'package:vpsmanager/core/security/encryption_vault.dart';
-import 'package:vpsmanager/core/storage/local_storage_service.dart';
+import 'package:othrys/core/models/activity_log_entity.dart';
+import 'package:othrys/core/repositories/activity_repository.dart';
+import 'package:othrys/core/security/encryption_vault.dart';
+import 'package:othrys/core/storage/local_storage_service.dart';
 import '../../test_helpers.dart';
 
 void main() {

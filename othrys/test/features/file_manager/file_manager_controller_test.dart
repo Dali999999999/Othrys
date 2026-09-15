@@ -1,6 +1,6 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/network/ssh_session_manager.dart';
-import 'package:vpsmanager/features/file_manager/file_manager_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/network/ssh_session_manager.dart';
+import 'package:othrys/features/file_manager/file_manager_controller.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

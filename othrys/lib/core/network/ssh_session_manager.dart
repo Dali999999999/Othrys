@@ -14,8 +14,10 @@ import '../security/command_sanitizer.dart';
 import '../security/host_key_store.dart';
 import '../storage/local_storage_service.dart';
 import '../utils/logger.dart';
+import '../utils/system_metrics_parser.dart';
 import 'active_ssh_session.dart';
 import 'is_ssh_session_manager.dart';
+import 'tunnel_manager.dart';
 
 export 'active_ssh_session.dart';
 export 'is_ssh_session_manager.dart';
@@ -278,9 +280,15 @@ class SSHSessionManager implements ISSHSessionManager {
     // Dispose old session before attempting to reconnect (prevents resource leaks)
     session.dispose();
 
-    connect(session.server, maxRetries: 3).then((newSession) {
+    connect(session.server, maxRetries: 3).then((newSession) async {
       _sessions[session.sessionId] = newSession;
+      _notifyState(session.server.id, ConnectionState.connected);
       _log(ActivityLevel.success, 'SSH', 'Auto-reconnected to ${session.server.name}');
+      try {
+        await TunnelManager.instance.restoreTunnelsForServer(session.server.id, newSession.client);
+      } catch (tunnelErr) {
+        _log(ActivityLevel.warning, 'SSH', 'Could not restore tunnels after reconnection: $tunnelErr');
+      }
     }).catchError((e, st) {
       session.status = ConnectionState.disconnected;
       _notifyState(session.server.id, ConnectionState.disconnected);
@@ -465,66 +473,7 @@ class SSHSessionManager implements ISSHSessionManager {
   Future<SystemOverview> fetchSystemOverview(String sessionId) async {
     final cmd = 'uptime && free -b && df -k / && uname -s -r';
     final output = await executeCommand(sessionId, cmd);
-    final lines = output.trim().split('\n');
-
-    double cpuPercent = 0.0;
-    int memUsed = 0;
-    int memTotal = 1;
-    int diskUsed = 0;
-    int diskTotal = 1;
-    String uptime = 'Unknown';
-    String osKernel = 'Linux';
-
-    try {
-      if (lines.isNotEmpty) {
-        final uptimeLine = lines[0];
-        final loadMatch = RegExp(r'load average:\s*([0-9.]+)').firstMatch(uptimeLine);
-        if (loadMatch != null) {
-          final load = double.tryParse(loadMatch.group(1) ?? '0') ?? 0;
-          cpuPercent = (load * 100).clamp(0.0, 100.0);
-        }
-        if (uptimeLine.contains('up ')) {
-          uptime = uptimeLine.split('up ')[1].split(',')[0].trim();
-        }
-      }
-
-      final memLine = lines.firstWhere((l) => l.startsWith('Mem:'), orElse: () => '');
-      if (memLine.isNotEmpty) {
-        final parts = memLine.split(RegExp(r'\s+'));
-        if (parts.length >= 3) {
-          memTotal = int.tryParse(parts[1]) ?? 1;
-          memUsed = int.tryParse(parts[2]) ?? 0;
-        }
-      }
-
-      final diskLine = lines.firstWhere((l) => l.contains('/'), orElse: () => '');
-      if (diskLine.isNotEmpty) {
-        final parts = diskLine.split(RegExp(r'\s+'));
-        if (parts.length >= 4) {
-          diskTotal = (int.tryParse(parts[1]) ?? 1) * 1024;
-          diskUsed = (int.tryParse(parts[2]) ?? 0) * 1024;
-        }
-      }
-
-      if (lines.length > 3) {
-        osKernel = lines.last.trim();
-      }
-    } catch (e) {
-      AppLogger.instance.warn('SSHSessionManager', 'Error parsing system overview: $e');
-    }
-
-    return SystemOverview(
-      cpuUsagePercent: double.parse(cpuPercent.toStringAsFixed(1)),
-      memoryUsagePercent: double.parse(((memUsed / memTotal) * 100).toStringAsFixed(1)),
-      memoryUsedBytes: memUsed,
-      memoryTotalBytes: memTotal,
-      diskUsagePercent: double.parse(((diskUsed / diskTotal) * 100).toStringAsFixed(1)),
-      diskUsedBytes: diskUsed,
-      diskTotalBytes: diskTotal,
-      uptime: uptime,
-      osName: 'Linux Server',
-      kernel: osKernel,
-    );
+    return SystemMetricsParser.parseOverview(output);
   }
 
   /// Closes a session cleanly and terminates all associated tunnels.

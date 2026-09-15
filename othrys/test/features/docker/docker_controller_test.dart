@@ -1,7 +1,7 @@
-import 'package:flutter_test/flutter_test.dart';
-import 'package:vpsmanager/core/network/ssh_session_manager.dart';
-import 'package:vpsmanager/core/utils/result.dart';
-import 'package:vpsmanager/features/docker/docker_controller.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:othrys/core/network/ssh_session_manager.dart';
+import 'package:othrys/core/utils/result.dart';
+import 'package:othrys/features/docker/docker_controller.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
