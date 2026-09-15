@@ -89,4 +89,25 @@ void main() {
     final result = await controller.renameEntry('invalid-session', '/tmp/old.txt', '/tmp/new.txt');
     expect(result.isFailure, isTrue);
   });
+
+  test('FileManagerController createEntry rejects path traversal and invalid characters', () async {
+    final controller = FileManagerController(sshManager: SSHSessionManager.instance);
+    final traversals = ['..', '../foo', r'..\bar', 'foo/bar', r'foo\bar', '', '   ', '.', 'test\x00evil'];
+    for (final badName in traversals) {
+      final res = await controller.createEntry('session-1', badName, isFolder: false);
+      expect(res.isFailure, isTrue, reason: 'Should reject bad entry name: "$badName"');
+      expect(res.failureOrNull?.message.contains('Path traversal and separators are not allowed'), isTrue);
+    }
+  });
+
+  test('FileManagerController renameEntry rejects empty or null-byte paths', () async {
+    final controller = FileManagerController(sshManager: SSHSessionManager.instance);
+    final emptyRes = await controller.renameEntry('session-1', '/tmp/old.txt', '   ');
+    expect(emptyRes.isFailure, isTrue);
+    expect(emptyRes.failureOrNull?.message.contains('Invalid target path'), isTrue);
+
+    final nullByteRes = await controller.renameEntry('session-1', '/tmp/old.txt', '/tmp/evil\x00file');
+    expect(nullByteRes.isFailure, isTrue);
+    expect(nullByteRes.failureOrNull?.message.contains('Invalid target path'), isTrue);
+  });
 }

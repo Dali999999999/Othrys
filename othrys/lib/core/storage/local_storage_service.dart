@@ -82,7 +82,9 @@ class LocalStorageService {
       if (await tmpFile.exists()) {
         try {
           await tmpFile.delete();
-        } catch (_) {}
+        } catch (delErr) {
+          AppLogger.instance.warn('LocalStorage', 'Failed to remove temporary file: $delErr');
+        }
       }
       rethrow;
     }
@@ -152,17 +154,53 @@ class LocalStorageService {
         String? encPassword;
         if (server.password != null && server.password!.isNotEmpty) {
           final res = await _vault.encrypt(server.password!);
-          encPassword = res.getOrElse(() => server.password!);
+          if (res.isFailure) {
+            final f = res as Failure<String>;
+            AppLogger.instance.error(
+              'LocalStorage',
+              'Refusing to save server "${server.name}": password encryption failed: ${f.message}',
+            );
+            return Failure(
+              'Refusing to persist credentials in plaintext for "${server.name}": password encryption failed: ${f.message}',
+              f.exception,
+              f.stackTrace,
+            );
+          }
+          encPassword = (res as Success<String>).data;
         }
         String? encKey;
         if (server.privateKey != null && server.privateKey!.isNotEmpty) {
           final res = await _vault.encrypt(server.privateKey!);
-          encKey = res.getOrElse(() => server.privateKey!);
+          if (res.isFailure) {
+            final f = res as Failure<String>;
+            AppLogger.instance.error(
+              'LocalStorage',
+              'Refusing to save server "${server.name}": private key encryption failed: ${f.message}',
+            );
+            return Failure(
+              'Refusing to persist credentials in plaintext for "${server.name}": private key encryption failed: ${f.message}',
+              f.exception,
+              f.stackTrace,
+            );
+          }
+          encKey = (res as Success<String>).data;
         }
         String? encPassphrase;
         if (server.passphrase != null && server.passphrase!.isNotEmpty) {
           final res = await _vault.encrypt(server.passphrase!);
-          encPassphrase = res.getOrElse(() => server.passphrase!);
+          if (res.isFailure) {
+            final f = res as Failure<String>;
+            AppLogger.instance.error(
+              'LocalStorage',
+              'Refusing to save server "${server.name}": passphrase encryption failed: ${f.message}',
+            );
+            return Failure(
+              'Refusing to persist credentials in plaintext for "${server.name}": passphrase encryption failed: ${f.message}',
+              f.exception,
+              f.stackTrace,
+            );
+          }
+          encPassphrase = (res as Success<String>).data;
         }
 
         encryptedJsonList.add(server.copyWith(
@@ -218,7 +256,9 @@ class LocalStorageService {
           final List<dynamic> jsonList = jsonDecode(content);
           final logs = jsonList.map((e) => ActivityLogEntity.fromJson(e as Map<String, dynamic>)).toList();
           return logs.reversed.take(limit).toList();
-        } catch (_) {}
+        } catch (bakErr) {
+          AppLogger.instance.warn('LocalStorage', 'Failed to read backup activity logs: $bakErr');
+        }
       }
       return [];
     }
@@ -261,7 +301,9 @@ class LocalStorageService {
     if (await bakFile.exists()) {
       try {
         await bakFile.delete();
-      } catch (_) {}
+      } catch (bakDelErr) {
+        AppLogger.instance.warn('LocalStorage', 'Failed to delete backup activity file: $bakDelErr');
+      }
     }
   });
 

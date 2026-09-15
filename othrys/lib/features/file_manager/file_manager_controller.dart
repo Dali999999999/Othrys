@@ -177,7 +177,16 @@ class FileManagerController extends StateNotifier<FileManagerState> {
     required bool isFolder,
     ServerEntity? server,
   }) async {
-    final targetPath = state.currentPath == '/' ? '/$name' : '${state.currentPath}/$name';
+    final trimmed = name.trim();
+    if (trimmed.isEmpty ||
+        trimmed == '.' ||
+        trimmed == '..' ||
+        trimmed.contains('/') ||
+        trimmed.contains(r'\') ||
+        trimmed.contains('\x00')) {
+      return const Failure('Invalid entry name. Path traversal and separators are not allowed.');
+    }
+    final targetPath = state.currentPath == '/' ? '/$trimmed' : '${state.currentPath}/$trimmed';
     try {
       final sftp = await sshManager.getSftp(sessionId);
       if (isFolder) {
@@ -239,6 +248,7 @@ class FileManagerController extends StateNotifier<FileManagerState> {
     String localPath,
     String remoteDirectory, {
     ServerEntity? server,
+    bool overwrite = true,
     void Function(int sent, int total)? onProgress,
   }) async {
     try {
@@ -253,9 +263,22 @@ class FileManagerController extends StateNotifier<FileManagerState> {
       }
 
       final fileName = p.basename(localPath);
+      if (fileName.isEmpty || fileName == '.' || fileName == '..' || fileName.contains('\x00')) {
+        return const Failure('Invalid file name.');
+      }
       final remotePath = remoteDirectory == '/' ? '/$fileName' : '$remoteDirectory/$fileName';
 
       final sftp = await sshManager.getSftp(sessionId);
+      if (!overwrite) {
+        try {
+          await sftp.stat(remotePath);
+          return Failure('Remote file already exists: $remotePath');
+        } catch (e) {
+          // File does not exist, can safely proceed
+          AppLogger.instance.debug('FileManagerController', 'Target file does not exist, proceeding with upload: $e');
+        }
+      }
+
       final remoteFile = await sftp.open(
         remotePath,
         mode: SftpFileOpenMode.create | SftpFileOpenMode.write | SftpFileOpenMode.truncate,
@@ -330,18 +353,22 @@ class FileManagerController extends StateNotifier<FileManagerState> {
     String newPath, {
     ServerEntity? server,
   }) async {
+    final trimmedNew = newPath.trim();
+    if (trimmedNew.isEmpty || trimmedNew.contains('\x00')) {
+      return const Failure('Invalid target path.');
+    }
     try {
       final sftp = await sshManager.getSftp(sessionId);
-      await sftp.rename(oldPath, newPath);
+      await sftp.rename(oldPath, trimmedNew);
 
       if (server != null) {
-        activityService?.logFileAction(server, '$oldPath -> $newPath', 'rename');
+        activityService?.logFileAction(server, '$oldPath -> $trimmedNew', 'rename');
       }
 
       await loadDirectory(sessionId, state.currentPath, isSilent: true);
       return const Success(null);
     } catch (e, st) {
-      final msg = 'Failed to rename $oldPath to $newPath: $e';
+      final msg = 'Failed to rename $oldPath to $trimmedNew: $e';
       AppLogger.instance.error('FileManagerController', msg, e, st);
       return Failure(msg, e, st);
     }

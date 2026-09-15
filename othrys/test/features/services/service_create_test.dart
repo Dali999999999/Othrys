@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vpsmanager/core/network/ssh_session_manager.dart';
 import 'package:vpsmanager/core/utils/result.dart';
@@ -13,6 +14,18 @@ class _MockSSHSessionManager extends Fake implements SSHSessionManager {
     List<String> arguments, {
     Duration timeout = const Duration(seconds: 15),
   }) async {
+    final full = '$baseCommand ${arguments.join(' ')}';
+    executedCommands.add(full);
+    return '';
+  }
+
+  @override
+  Future<String> executeSafeCommandWithStdin(
+    String sessionId,
+    String baseCommand,
+    List<String> arguments,
+    Uint8List stdinData,
+  ) async {
     final full = '$baseCommand ${arguments.join(' ')}';
     executedCommands.add(full);
     return '';

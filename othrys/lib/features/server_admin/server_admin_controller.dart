@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/activity_log_entity.dart';
 import '../../core/models/server_admin_entities.dart';
@@ -340,7 +342,18 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
     return users;
   }
 
-  /// Creates a new Linux user account and sets initial password.
+  static const Set<String> _allowedShells = {
+    '/bin/bash',
+    '/bin/sh',
+    '/bin/zsh',
+    '/usr/bin/bash',
+    '/usr/bin/sh',
+    '/usr/bin/zsh',
+    '/bin/false',
+    '/usr/sbin/nologin',
+  };
+
+  /// Creates a new Linux user account and sets initial password safely via stdin.
   Future<Result<void>> createSystemUser(
     String sessionId,
     String username,
@@ -350,12 +363,57 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
     ServerEntity? server,
   }) async {
     try {
-      final safeUser = CommandSanitizer.sanitizeIdentifier(username);
-      await _ssh.executeCommand(sessionId, 'sudo useradd -m -s \'$shell\' \'$safeUser\'');
-      await _ssh.executeCommand(sessionId, 'echo "$safeUser:$password" | sudo chpasswd');
+      final trimmedUser = username.trim();
+      final safeUser = CommandSanitizer.sanitizeIdentifier(trimmedUser);
 
+      // Validate Linux username format strictly (POSIX user names)
+      if (!RegExp(r'^[a-z_][a-z0-9_-]*[$]?$').hasMatch(safeUser)) {
+        return const Failure('Invalid username format: must start with lowercase letter or underscore');
+      }
+
+      // Validate shell against strict whitelist
+      final trimmedShell = shell.trim();
+      if (!_allowedShells.contains(trimmedShell)) {
+        return Failure('Disallowed shell "$shell". Must be one of ${_allowedShells.join(', ')}');
+      }
+
+      // Validate password does not contain characters that could corrupt chpasswd record
+      if (password.contains('\n') || password.contains('\r') || password.contains('\x00')) {
+        return const Failure('Password contains forbidden line breaks or null characters');
+      }
+      if (password.contains(':')) {
+        return const Failure('Password cannot contain colon character (:) used as delimiter in chpasswd');
+      }
+      if (password.isEmpty) {
+        return const Failure('Password cannot be empty');
+      }
+
+      // 1. Create user with separated arguments via executeSafeCommand
+      await _ssh.executeSafeCommand(sessionId, 'sudo', [
+        'useradd',
+        '-m',
+        '-s',
+        trimmedShell,
+        safeUser,
+      ]);
+
+      // 2. Set password via chpasswd through encrypted stdin without shell interpolation
+      final chpasswdInput = Uint8List.fromList(utf8.encode('$safeUser:$password\n'));
+      await _ssh.executeSafeCommandWithStdin(
+        sessionId,
+        'sudo',
+        ['chpasswd'],
+        chpasswdInput,
+      );
+
+      // 3. Grant sudo if requested
       if (grantSudo) {
-        await _ssh.executeCommand(sessionId, 'sudo usermod -aG sudo \'$safeUser\' || sudo usermod -aG wheel \'$safeUser\'');
+        try {
+          await _ssh.executeSafeCommand(sessionId, 'sudo', ['usermod', '-aG', 'sudo', safeUser]);
+        } catch (e) {
+          AppLogger.instance.info('ServerAdminController', 'sudo group assignment failed ($e), falling back to wheel group');
+          await _ssh.executeSafeCommand(sessionId, 'sudo', ['usermod', '-aG', 'wheel', safeUser]);
+        }
       }
 
       if (server != null && _activity != null) {
@@ -372,7 +430,7 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
     }
   }
 
-  /// Deletes a Linux user account and their home directory.
+  /// Deletes a Linux user account and their home directory safely.
   Future<Result<void>> deleteSystemUser(
     String sessionId,
     String username, {
@@ -383,7 +441,12 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
       if (safeUser == 'root') {
         return const Failure('Cannot delete root user account');
       }
-      await _ssh.executeCommand(sessionId, 'sudo userdel -r \'$safeUser\' || sudo userdel \'$safeUser\'');
+      try {
+        await _ssh.executeSafeCommand(sessionId, 'sudo', ['userdel', '-r', safeUser]);
+      } catch (e) {
+        AppLogger.instance.info('ServerAdminController', 'userdel -r failed ($e), falling back to userdel without home directory removal');
+        await _ssh.executeSafeCommand(sessionId, 'sudo', ['userdel', safeUser]);
+      }
 
       if (server != null && _activity != null) {
         _activity.logCustomAction(
@@ -412,12 +475,23 @@ class ServerAdminController extends StateNotifier<ServerAdminState> {
       if (!trimmedKey.startsWith('ssh-') && !trimmedKey.startsWith('ecdsa-')) {
         return const Failure('Invalid SSH public key format (must start with ssh- or ecdsa-)');
       }
+      if (trimmedKey.contains('\n') || trimmedKey.contains('\r') || trimmedKey.contains('\x00')) {
+        return const Failure('SSH public key must not contain line breaks or null characters');
+      }
 
-      final cmd = "sudo -u '$safeUser' mkdir -p ~/.ssh && "
-          "sudo -u '$safeUser' chmod 700 ~/.ssh && "
-          "echo '$trimmedKey' | sudo -u '$safeUser' tee -a ~/.ssh/authorized_keys > /dev/null && "
-          "sudo -u '$safeUser' chmod 600 ~/.ssh/authorized_keys";
-      await _ssh.executeCommand(sessionId, cmd);
+      await _ssh.executeCommand(
+        sessionId,
+        "sudo -u '$safeUser' mkdir -p ~/.ssh && sudo -u '$safeUser' chmod 700 ~/.ssh",
+      );
+      await _ssh.executeCommandWithStdin(
+        sessionId,
+        "sudo -u '$safeUser' tee -a ~/.ssh/authorized_keys > /dev/null",
+        Uint8List.fromList(utf8.encode('$trimmedKey\n')),
+      );
+      await _ssh.executeCommand(
+        sessionId,
+        "sudo -u '$safeUser' chmod 600 ~/.ssh/authorized_keys",
+      );
 
       if (server != null && _activity != null) {
         _activity.logCustomAction(

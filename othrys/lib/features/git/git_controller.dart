@@ -11,66 +11,8 @@ import '../../core/utils/result.dart';
 import '../servers/server_controller.dart';
 
 export '../../core/models/git_entities.dart';
-
-/// State representation for remote Git operations.
-class GitState {
-  final bool isGitInstalled;
-  final String? gitVersion;
-  final List<String> trackedRepoPaths;
-  final String? selectedRepoPath;
-  final GitRepositoryInfo? selectedRepo;
-  final List<GitCommit> history;
-  final GitDeployKey deployKey;
-  final GitConfig gitConfig;
-  final bool isLoading;
-  final String? actionFeedback;
-  final String? errorMessage;
-
-  const GitState({
-    this.isGitInstalled = false,
-    this.gitVersion,
-    this.trackedRepoPaths = const [],
-    this.selectedRepoPath,
-    this.selectedRepo,
-    this.history = const [],
-    this.deployKey = const GitDeployKey(),
-    this.gitConfig = const GitConfig(),
-    this.isLoading = false,
-    this.actionFeedback,
-    this.errorMessage,
-  });
-
-  GitState copyWith({
-    bool? isGitInstalled,
-    String? gitVersion,
-    List<String>? trackedRepoPaths,
-    String? selectedRepoPath,
-    GitRepositoryInfo? selectedRepo,
-    bool clearSelectedRepo = false,
-    List<GitCommit>? history,
-    GitDeployKey? deployKey,
-    GitConfig? gitConfig,
-    bool? isLoading,
-    String? actionFeedback,
-    bool clearActionFeedback = false,
-    String? errorMessage,
-    bool clearError = false,
-  }) {
-    return GitState(
-      isGitInstalled: isGitInstalled ?? this.isGitInstalled,
-      gitVersion: gitVersion ?? this.gitVersion,
-      trackedRepoPaths: trackedRepoPaths ?? this.trackedRepoPaths,
-      selectedRepoPath: selectedRepoPath ?? this.selectedRepoPath,
-      selectedRepo: clearSelectedRepo ? null : (selectedRepo ?? this.selectedRepo),
-      history: history ?? this.history,
-      deployKey: deployKey ?? this.deployKey,
-      gitConfig: gitConfig ?? this.gitConfig,
-      isLoading: isLoading ?? this.isLoading,
-      actionFeedback: clearActionFeedback ? null : (actionFeedback ?? this.actionFeedback),
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-    );
-  }
-}
+export 'git_state.dart';
+import 'git_state.dart';
 
 /// Controller orchestrating Git installation, repository discovery, branch switching,
 /// status tracking, pulls, and deploy keys.
@@ -172,7 +114,8 @@ class GitController extends StateNotifier<GitState> {
       } else {
         _safeSetState((s) => s.copyWith(isGitInstalled: false, gitVersion: null));
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.instance.warn('GitController', 'Git probe error: $e');
       _safeSetState((s) => s.copyWith(isGitInstalled: false, gitVersion: null));
     }
   }
@@ -188,7 +131,7 @@ class GitController extends StateNotifier<GitState> {
       if (server != null && _activity != null) {
         _activity.logCustomAction(
           server,
-          'Installed Git package',
+          'Installed Git via apt-get',
           category: ActivityCategory.system,
         );
       }
@@ -196,8 +139,8 @@ class GitController extends StateNotifier<GitState> {
       _safeSetState((s) => s.copyWith(isLoading: false));
       return const Success(null);
     } catch (e, st) {
-      _safeSetState((s) => s.copyWith(isLoading: false, errorMessage: 'Install Git failed: $e'));
-      return Failure('installGit error: $e', e, st);
+      _safeSetState((s) => s.copyWith(isLoading: false, errorMessage: 'Install Git error: $e'));
+      return Failure('Install Git error: $e', e, st);
     }
   }
 
@@ -242,7 +185,8 @@ class GitController extends StateNotifier<GitState> {
         'find /var/www /home /opt ~ -maxdepth 3 -name .git -type d 2>/dev/null || true',
       );
       return parseDiscoveredRepos(res);
-    } catch (_) {
+    } catch (e) {
+      AppLogger.instance.warn('GitController', 'Scan common paths error: $e');
       return [];
     }
   }
@@ -619,7 +563,8 @@ class GitController extends StateNotifier<GitState> {
       } else {
         _safeSetState((s) => s.copyWith(deployKey: const GitDeployKey(publicKey: null, exists: false)));
       }
-    } catch (_) {
+    } catch (e) {
+      AppLogger.instance.warn('GitController', 'Load deploy key error: $e');
       _safeSetState((s) => s.copyWith(deployKey: const GitDeployKey(publicKey: null, exists: false)));
     }
   }
@@ -661,7 +606,9 @@ class GitController extends StateNotifier<GitState> {
           userEmail: email.trim().isEmpty ? null : email.trim(),
         ),
       ));
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('GitController', 'Load git config error: $e');
+    }
   }
 
   /// Updates global git identity config.

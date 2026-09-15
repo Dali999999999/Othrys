@@ -65,6 +65,7 @@ brain/
 !.env.example
 make_cert.ps1
 sign_binaries.ps1
+RAPPORT_AUDIT.md
 
 # Distribution & Installers (distribute via GitHub Releases)
 dist/

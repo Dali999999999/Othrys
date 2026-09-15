@@ -5,6 +5,7 @@ import '../../core/network/ssh_session_manager.dart';
 import '../../core/services/activity_service.dart';
 import '../../core/utils/logger.dart';
 import '../../core/utils/result.dart';
+import '../../core/utils/shell_commands.dart';
 import '../servers/server_controller.dart';
 
 export '../../core/models/docker_container_entity.dart';
@@ -122,17 +123,57 @@ class DockerController extends StateNotifier<DockerState> {
     }
   }
 
-  /// Executes a docker compose command in the given remote directory.
+  static const Set<String> _allowedComposeActions = {
+    'up',
+    'down',
+    'restart',
+    'logs',
+    'ps',
+    'stop',
+    'start',
+    'build',
+    'pull',
+  };
+
+  /// Executes a docker compose command in the given remote directory safely.
   Future<Result<String>> runComposeAction(
     String sessionId,
     String projectDir,
     String action, {
     ServerEntity? server,
   }) async {
+    final effectiveDir = projectDir.trim().isEmpty ? '.' : projectDir.trim();
+
+    // Parse and validate action arguments
+    final parts = action.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
+    if (parts.isEmpty) {
+      return const Failure('Compose action cannot be empty');
+    }
+
+    final rootAction = parts.first;
+    if (!_allowedComposeActions.contains(rootAction)) {
+      return Failure('Disallowed compose action: "$rootAction"');
+    }
+
+    for (final token in parts) {
+      if (token.contains(';') ||
+          token.contains('&') ||
+          token.contains('|') ||
+          token.contains('`') ||
+          token.contains(r'$') ||
+          token.contains('\n') ||
+          token.contains('\r')) {
+        return Failure('Dangerous token detected in compose argument: "$token"');
+      }
+    }
+
     state = state.copyWith(isComposeRunning: true);
     try {
-      final effectiveDir = projectDir.trim().isEmpty ? '.' : projectDir.trim();
-      final cmd = 'cd "$effectiveDir" && ${state.composeCommand} $action';
+      final cmd = ShellCommands.dockerCompose(
+        effectiveDir,
+        parts,
+        composeCommand: state.composeCommand,
+      );
       final output = await sshManager.executeCommand(sessionId, cmd);
       state = state.copyWith(isComposeRunning: false, composeOutput: output);
       if (server != null) {

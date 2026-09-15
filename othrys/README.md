@@ -16,7 +16,7 @@ othrys/
 │   ├── domain/        # Pure domain entities, repository contracts, Result<T> monad
 │   ├── features/      # Feature modules (terminal, docker, systemd, sftp, tunnels, settings)
 │   └── shared/        # Reusable Fluent UI widgets, cards, badges, and brand assets
-├── test/              # Unit, widget, and repository test suites (110+ tests)
+├── test/              # Unit, widget, and repository test suites (217 tests)
 ├── windows/           # Windows 11 C++ desktop runner and native window integration
 └── pubspec.yaml       # Dependencies, assets, and Flutter configuration
 ```

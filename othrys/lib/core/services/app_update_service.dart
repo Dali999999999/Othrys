@@ -251,7 +251,8 @@ class AppUpdateService extends StateNotifier<AppUpdateState> {
         if (rParts[i] < lParts[i]) return false;
       }
       return false;
-    } catch (_) {
+    } catch (e) {
+      AppLogger.instance.warn('AppUpdateService', 'Version parsing comparison error: $e');
       return false;
     }
   }

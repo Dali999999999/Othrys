@@ -6,6 +6,7 @@ import 'package:vpsmanager/core/models/activity_log_entity.dart';
 import 'package:vpsmanager/core/models/server_entity.dart';
 import 'package:vpsmanager/core/security/encryption_vault.dart';
 import 'package:vpsmanager/core/storage/local_storage_service.dart';
+import 'package:vpsmanager/core/utils/result.dart';
 
 class TestStorage extends Fake implements FlutterSecureStorage {
   final Map<String, String> _data = {};
@@ -134,5 +135,63 @@ void main() {
       final logs = await storage.loadActivityLogs(limit: 50);
       expect(logs.length, 15);
     });
+
+    test('saveServers FAILS explicitly and NEVER writes plaintext if encryption fails', () async {
+      final uninitializedVault = EncryptionVault(secureStorage: FakeFailingStorage());
+      final insecureStorage = LocalStorageService(
+        vault: uninitializedVault,
+        storageDirResolver: () async => tempDir,
+      );
+
+      final server = ServerEntity(
+        id: 'srv-fail',
+        name: 'Fail Server',
+        host: '192.168.1.100',
+        port: 22,
+        username: 'root',
+        authType: AuthMethod.password,
+        password: 'SUPER_SECRET_PLAINTEXT_PASSWORD',
+      );
+
+      final saveResult = await insecureStorage.saveServers([server]);
+      expect(saveResult.isFailure, isTrue);
+      expect((saveResult as Failure).message, contains('Refusing to persist credentials in plaintext'));
+
+      // Verify the servers file does NOT contain the plaintext password!
+      final serversFile = File('${tempDir.path}/Othrys/servers.json');
+      if (await serversFile.exists()) {
+        final content = await serversFile.readAsString();
+        expect(content.contains('SUPER_SECRET_PLAINTEXT_PASSWORD'), isFalse);
+      }
+    });
   });
+}
+
+class FakeFailingStorage extends Fake implements FlutterSecureStorage {
+  @override
+  Future<String?> read({
+    required String key,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw Exception('Secure storage hardware failure');
+  }
+
+  @override
+  Future<void> write({
+    required String key,
+    required String? value,
+    AppleOptions? iOptions,
+    AndroidOptions? aOptions,
+    LinuxOptions? lOptions,
+    WebOptions? webOptions,
+    MacOsOptions? mOptions,
+    WindowsOptions? wOptions,
+  }) async {
+    throw Exception('Secure storage hardware failure');
+  }
 }

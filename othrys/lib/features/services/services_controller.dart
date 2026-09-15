@@ -1,13 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/models/service_entry_entity.dart';
+import '../../core/network/is_ssh_session_manager.dart';
 import '../../core/network/ssh_session_manager.dart';
-import '../../core/security/command_sanitizer.dart';
 import '../../core/services/activity_service.dart';
-import '../../core/utils/logger.dart';
+import '../../core/services/systemd_service.dart';
 import '../../core/utils/result.dart';
 import '../servers/server_controller.dart';
 
 export '../../core/models/service_entry_entity.dart';
+export '../../core/services/systemd_service.dart' show SystemdService;
 
 /// State representation for remote systemd units and execution status.
 class ServicesState {
@@ -40,13 +41,16 @@ class ServicesState {
 
 /// Controller orchestrating systemd unit discovery, state transitions, and journals.
 class ServicesController extends StateNotifier<ServicesState> {
-  final SSHSessionManager sshManager;
+  final ISSHSessionManager sshManager;
   final ActivityService? activityService;
+  final SystemdService systemdService;
 
   ServicesController({
     required this.sshManager,
     this.activityService,
-  }) : super(const ServicesState());
+    SystemdService? systemdService,
+  })  : systemdService = systemdService ?? SystemdService(sshManager: sshManager),
+        super(const ServicesState());
 
   /// Queries all loaded systemd service units and their enabled at boot state.
   Future<Result<List<ServiceEntryEntity>>> loadServices(String sessionId, {bool isSilent = false}) async {
@@ -54,52 +58,15 @@ class ServicesController extends StateNotifier<ServicesState> {
     if (!isSilent) {
       state = state.copyWith(isLoading: state.services.isEmpty, error: null);
     }
-    try {
-      const cmd = 'systemctl list-unit-files --type=service --no-legend --no-pager 2>/dev/null || true; echo "===SPLIT==="; systemctl list-units --type=service --no-legend --no-pager';
-      final rawOutput = await sshManager.executeCommand(sessionId, cmd);
+    final result = await systemdService.listServices(sessionId);
+    if (!mounted) return result;
 
-      final sections = rawOutput.split('===SPLIT===');
-      final enabledMap = <String, bool>{};
-
-      if (sections.isNotEmpty) {
-        for (final line in sections[0].trim().split('\n')) {
-          final parts = line.trim().split(RegExp(r'\s+'));
-          if (parts.length >= 2) {
-            enabledMap[parts[0]] = parts[1].toLowerCase() == 'enabled';
-          }
-        }
-      }
-
-      final unitsSection = sections.length > 1 ? sections[1] : sections[0];
-      final List<ServiceEntryEntity> list = [];
-      for (final line in unitsSection.trim().split('\n')) {
-        final trimmed = line.trim();
-        if (trimmed.isEmpty) continue;
-        final parts = trimmed.split(RegExp(r'\s+'));
-        if (parts.length >= 5) {
-          final unit = parts[0];
-          list.add(ServiceEntryEntity(
-            unit: unit,
-            load: parts[1],
-            active: parts[2],
-            sub: parts[3],
-            description: parts.sublist(4).join(' '),
-            isEnabled: enabledMap[unit] ?? false,
-          ));
-        }
-      }
-
-      if (!mounted) return Success(list);
-      state = state.copyWith(services: list, isLoading: false);
-      return Success(list);
-    } catch (e, st) {
-      final msg = 'Failed to list systemd services: $e';
-      AppLogger.instance.error('ServicesController', msg, e, st);
-      if (mounted) {
-        state = state.copyWith(isLoading: false, error: msg);
-      }
-      return Failure(msg, e, st);
+    if (result.isSuccess) {
+      state = state.copyWith(services: result.dataOrNull ?? [], isLoading: false);
+    } else {
+      state = state.copyWith(isLoading: false, error: result.failureOrNull?.message);
     }
+    return result;
   }
 
   /// Sends a control command ('start', 'stop', 'restart', 'reload', 'enable', 'disable') to target service.
@@ -137,14 +104,8 @@ class ServicesController extends StateNotifier<ServicesState> {
       error: null,
     );
 
-    try {
-      final sanitizedUnit = CommandSanitizer.sanitizeIdentifier(service.unit);
-      await sshManager.executeSafeCommand(
-        sessionId,
-        'sudo',
-        ['systemctl', action, sanitizedUnit],
-      );
-
+    final result = await systemdService.executeAction(sessionId, unit, action);
+    if (result.isSuccess) {
       if (server != null) {
         activityService?.logServiceAction(server, service.unit, action);
       }
@@ -155,17 +116,15 @@ class ServicesController extends StateNotifier<ServicesState> {
         pendingUnits: Set<String>.from(state.pendingUnits)..remove(unit),
       );
       return const Success(null);
-    } catch (e, st) {
-      final msg = 'Failed to $action ${service.unit}: $e';
-      AppLogger.instance.error('ServicesController', msg, e, st);
+    } else {
       if (mounted) {
         state = state.copyWith(
           services: previousServices,
           pendingUnits: Set<String>.from(state.pendingUnits)..remove(unit),
-          error: msg,
+          error: result.failureOrNull?.message,
         );
       }
-      return Failure(msg, e, st);
+      return result;
     }
   }
 
@@ -178,21 +137,8 @@ class ServicesController extends StateNotifier<ServicesState> {
       executeServiceAction(sessionId, service, 'disable', server: server);
 
   /// Fetches the recent journalctl logs for a specific service.
-  Future<Result<String>> getJournalLogs(String sessionId, String serviceUnit, {int lines = 150}) async {
-    try {
-      final sanitizedUnit = CommandSanitizer.sanitizeIdentifier(serviceUnit);
-      final logs = await sshManager.executeSafeCommand(
-        sessionId,
-        'sudo',
-        ['journalctl', '-u', sanitizedUnit, '-n', lines.toString(), '--no-pager'],
-      );
-      return Success(logs);
-    } catch (e, st) {
-      final msg = 'Failed to fetch journal logs for $serviceUnit: $e';
-      AppLogger.instance.error('ServicesController', msg, e, st);
-      return Failure(msg, e, st);
-    }
-  }
+  Future<Result<String>> getJournalLogs(String sessionId, String serviceUnit, {int lines = 150}) =>
+      systemdService.getJournalLogs(sessionId, serviceUnit, lines: lines);
 
   /// Creates and deploys a new systemd unit file on the remote server.
   Future<Result<void>> createService(
@@ -200,53 +146,17 @@ class ServicesController extends StateNotifier<ServicesState> {
     ServiceDefinition definition, {
     ServerEntity? server,
   }) async {
-    try {
-      final rawName = definition.name.endsWith('.service')
-          ? definition.name.substring(0, definition.name.length - 8)
-          : definition.name;
-      final sanitizedName = CommandSanitizer.sanitizeIdentifier(rawName);
-      final unitName = '$sanitizedName.service';
-      final unitContent = definition.generateUnitContent();
-
-      final escaped = unitContent.replaceAll("'", "'\\''");
-      await sshManager.executeSafeCommand(
-        sessionId,
-        'sudo',
-        ['bash', '-c', "echo '$escaped' > /etc/systemd/system/$unitName && chmod 644 /etc/systemd/system/$unitName"],
-      );
-
-      await sshManager.executeSafeCommand(
-        sessionId,
-        'sudo',
-        ['systemctl', 'daemon-reload'],
-      );
-
-      if (definition.enableAtBoot) {
-        await sshManager.executeSafeCommand(
-          sessionId,
-          'sudo',
-          ['systemctl', 'enable', unitName],
-        );
-      }
-
-      if (definition.startNow) {
-        await sshManager.executeSafeCommand(
-          sessionId,
-          'sudo',
-          ['systemctl', 'start', unitName],
-        );
-      }
-
+    final result = await systemdService.createService(sessionId, definition);
+    if (result.isSuccess) {
+      final unitName = result.dataOrNull!;
       if (server != null) {
         activityService?.logServiceAction(server, unitName, 'create');
       }
 
       await loadServices(sessionId);
       return const Success(null);
-    } catch (e, st) {
-      final msg = 'Failed to create service ${definition.name}: $e';
-      AppLogger.instance.error('ServicesController', msg, e, st);
-      return Failure(msg, e, st);
+    } else {
+      return Failure(result.failureOrNull?.message ?? 'Failed to create service');
     }
   }
 }
@@ -305,11 +215,17 @@ class ServiceDefinition {
   }
 }
 
+/// Riverpod provider for SystemdService.
+final systemdServiceProvider = Provider<SystemdService>((ref) {
+  return SystemdService(sshManager: ref.watch(sshSessionManagerProvider));
+});
+
 /// Riverpod provider for systemd services controller.
 final servicesControllerProvider =
     StateNotifierProvider.autoDispose<ServicesController, ServicesState>((ref) {
   return ServicesController(
     sshManager: ref.watch(sshSessionManagerProvider),
     activityService: ref.watch(activityServiceProvider),
+    systemdService: ref.watch(systemdServiceProvider),
   );
 });

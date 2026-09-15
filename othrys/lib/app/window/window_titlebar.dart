@@ -1,6 +1,8 @@
 import 'package:fluent_ui/fluent_ui.dart';
 import 'package:window_manager/window_manager.dart';
 import '../../core/network/ssh_session_manager.dart';
+import '../../core/network/tunnel_manager.dart';
+import '../../core/security/encryption_vault.dart';
 import '../../core/utils/logger.dart';
 import '../../core/l10n/l10n.dart';
 import '../theme/app_colors.dart';
@@ -65,6 +67,8 @@ class WindowTitleBar extends StatelessWidget {
 
     try {
       SSHSessionManager.instance.disconnectAll();
+      TunnelManager.instance.dispose();
+      EncryptionVault.instance.zeroize();
       await windowManager.close();
     } catch (e, st) {
       AppLogger.instance.error('Window', 'Error closing window: $e', e, st);

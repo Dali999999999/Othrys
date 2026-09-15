@@ -33,8 +33,15 @@ class ShellCommands {
   }
 
   /// Builds a safe docker-compose command scoped to a project folder.
-  static String dockerCompose(String directory, List<String> composeArgs) {
+  static String dockerCompose(
+    String directory,
+    List<String> composeArgs, {
+    String composeCommand = 'docker-compose',
+  }) {
     final safeDir = CommandSanitizer.sanitizePath(directory);
-    return 'cd $safeDir && ${CommandSanitizer.buildSafeCommand('docker-compose', composeArgs)}';
+    if (composeCommand == 'docker compose') {
+      return 'cd $safeDir && ${CommandSanitizer.buildSafeCommand('docker', ['compose', ...composeArgs])}';
+    }
+    return 'cd $safeDir && ${CommandSanitizer.buildSafeCommand(composeCommand, composeArgs)}';
   }
 }

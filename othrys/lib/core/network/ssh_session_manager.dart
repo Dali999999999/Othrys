@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:dartssh2/dartssh2.dart';
 import 'package:uuid/uuid.dart';
 import '../enums/connection_state.dart';
@@ -14,12 +15,14 @@ import '../security/host_key_store.dart';
 import '../storage/local_storage_service.dart';
 import '../utils/logger.dart';
 import 'active_ssh_session.dart';
+import 'is_ssh_session_manager.dart';
 
 export 'active_ssh_session.dart';
+export 'is_ssh_session_manager.dart';
 export '../models/user_privileges_entity.dart';
 
 /// Central SSH and SFTP connection manager.
-class SSHSessionManager {
+class SSHSessionManager implements ISSHSessionManager {
   static final SSHSessionManager instance = SSHSessionManager();
   final HostKeyStore _hostKeyStore;
 
@@ -31,18 +34,26 @@ class SSHSessionManager {
       StreamController<MapEntry<String, ConnectionState>>.broadcast();
 
   /// UI hook for interactive TOFU host key confirmation.
+  @override
   Future<bool> Function(ServerEntity server, String fingerprint)? onHostKeyPrompt;
 
+  @override
   Stream<ActivityLogEntity> get onActivity => _activityStream.stream;
+  @override
   Stream<MapEntry<String, ConnectionState>> get onConnectionStateChanged => _stateStream.stream;
 
+  @override
   List<ActiveSSHSession> get activeSessions => _sessions.values.toList();
+  @override
   int get activeSessionCount => _sessions.length;
+  @override
   ActiveSSHSession? getSession(String sessionId) => _sessions[sessionId];
 
+  @override
   bool isConnected(String serverId) =>
       _sessions.values.any((s) => s.server.id == serverId && s.status == ConnectionState.connected);
 
+  @override
   ActiveSSHSession? getSessionByServerId(String serverId) {
     try {
       return _sessions.values.firstWhere((s) => s.server.id == serverId);
@@ -80,6 +91,7 @@ class SSHSessionManager {
   }
 
   /// Connects to a remote server with automatic retry logic and host key validation.
+  @override
   Future<ActiveSSHSession> connect(ServerEntity server, {int maxRetries = 3}) async {
     final sessionId = const Uuid().v4();
     _log(ActivityLevel.info, 'SSH', 'Connecting to ${server.name} (${server.host}:${server.port})...');
@@ -147,6 +159,7 @@ class SSHSessionManager {
   }
 
   /// Tests connection to a remote server with an ephemeral session and closes it immediately.
+  @override
   Future<String> testConnection(ServerEntity server, {Duration timeout = const Duration(seconds: 10)}) async {
     SSHClient? client;
     try {
@@ -209,17 +222,32 @@ class SSHSessionManager {
       username: server.username,
       onPasswordRequest: () => server.password ?? '',
       identities: keyPairs,
-      onVerifyHostKey: (type, fingerprint) {
+      onVerifyHostKey: (type, fingerprint) async {
         final fpHex = fingerprint.map((b) => b.toRadixString(16).padLeft(2, '0')).join(':');
         final status = _hostKeyStore.verifyHostKeySync(server.host, server.port, fpHex);
 
         if (status == HostKeyStatus.trusted) {
           return true;
         } else if (status == HostKeyStatus.unknown) {
-          // Trust on first use after persisting to encrypted host key store
-          _hostKeyStore.trustHost(server.host, server.port, fpHex);
-          _log(ActivityLevel.info, 'SSH', 'New host key trusted for ${server.host}:$fpHex');
-          return true;
+          if (onHostKeyPrompt != null) {
+            final accepted = await onHostKeyPrompt!(server, fpHex);
+            if (accepted) {
+              await _hostKeyStore.trustHost(server.host, server.port, fpHex);
+              _log(ActivityLevel.info, 'SSH', 'New host key trusted by user for ${server.host}:$fpHex');
+              return true;
+            } else {
+              _log(ActivityLevel.warning, 'SSH', 'New host key rejected by user for ${server.host}:$fpHex');
+              return false;
+            }
+          } else {
+            // Fail-secure: reject unknown key if no confirmation prompt callback is configured
+            _log(
+              ActivityLevel.error,
+              'SSH',
+              'Unknown host key for ${server.host}:$fpHex rejected (no confirmation prompt configured).',
+            );
+            return false;
+          }
         } else {
           _log(ActivityLevel.error, 'SSH', 'CRITICAL SECURITY: Host key changed for ${server.host}! Possible MITM attack.');
           return false;
@@ -262,6 +290,7 @@ class SSHSessionManager {
   }
 
   /// Executes a single shell command and returns UTF-8 decoded output.
+  @override
   Future<String> executeCommand(String sessionId, String command) async {
     final session = _sessions[sessionId];
     if (session == null || session.status != ConnectionState.connected) {
@@ -272,6 +301,7 @@ class SSHSessionManager {
   }
 
   /// Executes a command safely using CommandSanitizer argument escaping and privilege awareness.
+  @override
   Future<String> executeSafeCommand(String sessionId, String binary, List<String> args) {
     final session = _sessions[sessionId];
     var effectiveBinary = binary;
@@ -297,7 +327,79 @@ class SSHSessionManager {
     return executeCommand(sessionId, safeCmd);
   }
 
+  @override
+  Future<String> executeCommandWithStdin(String sessionId, String command, Uint8List stdinData) async {
+    final session = _sessions[sessionId];
+    if (session == null || session.status != ConnectionState.connected) {
+      throw Exception('SSH session not found or disconnected');
+    }
+    final execSession = await session.client.execute(command);
+    execSession.stdin.add(stdinData);
+    await execSession.stdin.close();
+
+    final outputBuilder = BytesBuilder(copy: false);
+    final stdoutDone = Completer<void>();
+    final stderrDone = Completer<void>();
+
+    execSession.stdout.listen(
+      (data) => outputBuilder.add(data),
+      onDone: () {
+        if (!stdoutDone.isCompleted) stdoutDone.complete();
+      },
+      onError: (e) {
+        if (!stdoutDone.isCompleted) stdoutDone.complete();
+      },
+    );
+    execSession.stderr.listen(
+      (data) => outputBuilder.add(data),
+      onDone: () {
+        if (!stderrDone.isCompleted) stderrDone.complete();
+      },
+      onError: (e) {
+        if (!stderrDone.isCompleted) stderrDone.complete();
+      },
+    );
+
+    await Future.wait([stdoutDone.future, stderrDone.future, execSession.done]);
+    final code = execSession.exitCode;
+    final resultStr = utf8.decode(outputBuilder.takeBytes(), allowMalformed: true);
+    if (code != null && code != 0) {
+      throw Exception('Command "$command" exited with code $code: $resultStr');
+    }
+    return resultStr;
+  }
+
+  @override
+  Future<String> executeSafeCommandWithStdin(
+    String sessionId,
+    String binary,
+    List<String> args,
+    Uint8List stdinData,
+  ) {
+    final session = _sessions[sessionId];
+    var effectiveBinary = binary;
+    var effectiveArgs = List<String>.from(args);
+
+    if (session != null && session.privileges != null) {
+      final priv = session.privileges!;
+      if (binary == 'sudo') {
+        if (priv.isRoot && args.isNotEmpty) {
+          effectiveBinary = args[0];
+          effectiveArgs = args.sublist(1);
+        } else if (!priv.canSudoWithoutPassword && !priv.isRoot) {
+          throw Exception(
+            'Permission denied: user "${priv.username}" does not have root/sudo privileges to execute "$args".',
+          );
+        }
+      }
+    }
+
+    final safeCmd = CommandSanitizer.buildSafeCommand(effectiveBinary, effectiveArgs);
+    return executeCommandWithStdin(sessionId, safeCmd, stdinData);
+  }
+
   /// Returns or initializes cached SFTP client for the active session.
+  @override
   Future<SftpClient> getSftp(String sessionId) async {
     final session = _sessions[sessionId];
     if (session == null) throw Exception('Session not found');
@@ -308,6 +410,7 @@ class SSHSessionManager {
   }
 
   /// Creates a Local Port Forwarding Tunnel.
+  @override
   Future<TunnelEntity> createLocalTunnel({
     required String sessionId,
     required String name,
@@ -358,6 +461,7 @@ class SSHSessionManager {
   }
 
   /// Fetches system metrics from the remote server.
+  @override
   Future<SystemOverview> fetchSystemOverview(String sessionId) async {
     final cmd = 'uptime && free -b && df -k / && uname -s -r';
     final output = await executeCommand(sessionId, cmd);
@@ -424,6 +528,7 @@ class SSHSessionManager {
   }
 
   /// Closes a session cleanly and terminates all associated tunnels.
+  @override
   void disconnect(String sessionId) {
     final session = _sessions.remove(sessionId);
     if (session != null) {
@@ -434,6 +539,7 @@ class SSHSessionManager {
   }
 
   /// Disconnects all active sessions on application exit.
+  @override
   void disconnectAll() {
     for (final session in _sessions.values) {
       session.dispose();

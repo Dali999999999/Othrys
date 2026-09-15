@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vpsmanager/core/network/ssh_session_manager.dart';
 import 'package:vpsmanager/core/utils/result.dart';
@@ -5,11 +7,43 @@ import 'package:vpsmanager/features/server_admin/server_admin_controller.dart';
 
 class _MockSSHSessionManager extends Fake implements SSHSessionManager {
   final List<String> executedCommands = [];
+  final List<Uint8List> receivedStdin = [];
   String nextCommandOutput = '';
 
   @override
   Future<String> executeCommand(String sessionId, String command, {bool runInPty = false}) async {
     executedCommands.add(command);
+    return nextCommandOutput;
+  }
+
+  @override
+  Future<String> executeSafeCommand(String sessionId, String binary, List<String> args) async {
+    final cmd = '$binary ${args.join(' ')}';
+    executedCommands.add(cmd);
+    return nextCommandOutput;
+  }
+
+  @override
+  Future<String> executeSafeCommandWithStdin(
+    String sessionId,
+    String binary,
+    List<String> args,
+    Uint8List stdinData,
+  ) async {
+    final cmd = '$binary ${args.join(' ')}';
+    executedCommands.add(cmd);
+    receivedStdin.add(stdinData);
+    return nextCommandOutput;
+  }
+
+  @override
+  Future<String> executeCommandWithStdin(
+    String sessionId,
+    String command,
+    Uint8List stdinData,
+  ) async {
+    executedCommands.add(command);
+    receivedStdin.add(stdinData);
     return nextCommandOutput;
   }
 }
@@ -127,7 +161,67 @@ wheel:x:10:
     test('deleteSystemUser executes userdel command for valid user', () async {
       final res = await controller.deleteSystemUser('sess-1', 'developer');
       expect(res, isA<Success>());
-      expect(mockSsh.executedCommands.any((c) => c.contains('sudo userdel -r \'developer\'')), isTrue);
+      expect(
+        mockSsh.executedCommands.any((c) => c.contains('sudo userdel -r developer') || c.contains('sudo userdel -r \'developer\'')),
+        isTrue,
+      );
+    });
+
+    test('createSystemUser creates user safely and sends password over stdin', () async {
+      final res = await controller.createSystemUser('sess-1', 'alice', 'Secret123!');
+      expect(res, isA<Success>());
+      expect(mockSsh.executedCommands.any((c) => c.contains('useradd -m -s /bin/bash alice')), isTrue);
+      expect(mockSsh.executedCommands.any((c) => c.contains('chpasswd')), isTrue);
+      expect(mockSsh.receivedStdin.isNotEmpty, isTrue);
+      final stdinStr = utf8.decode(mockSsh.receivedStdin.first);
+      expect(stdinStr, equals('alice:Secret123!\n'));
+      // Ensure no command interpolation of password happened
+      expect(mockSsh.executedCommands.any((c) => c.contains('Secret123!')), isFalse);
+    });
+
+    test('createSystemUser with special characters in password safely passed via stdin without shell injection', () async {
+      const complexPass = r'''"$(reboot); ' || rm -rf / ; # `calc` & test''';
+      final res = await controller.createSystemUser('sess-1', 'bob', complexPass);
+      expect(res, isA<Success>());
+      expect(mockSsh.executedCommands.any((c) => c.contains('chpasswd')), isTrue);
+      expect(mockSsh.receivedStdin.isNotEmpty, isTrue);
+      final stdinStr = utf8.decode(mockSsh.receivedStdin.first);
+      expect(stdinStr, equals('bob:$complexPass\n'));
+      // CRITICAL: password was NEVER executed or interpolated in shell commands!
+      expect(mockSsh.executedCommands.any((c) => c.contains(complexPass)), isFalse);
+      expect(mockSsh.executedCommands.any((c) => c.contains('reboot')), isFalse);
+    });
+
+    test('createSystemUser rejects invalid usernames with metacharacters', () async {
+      final res1 = await controller.createSystemUser('sess-1', 'user;reboot', 'P@ssw0rd1');
+      expect(res1, isA<Failure>());
+
+      final res2 = await controller.createSystemUser('sess-1', '123bad', 'P@ssw0rd1');
+      expect(res2, isA<Failure>());
+
+      final res3 = await controller.createSystemUser('sess-1', 'user\$(whoami)', 'P@ssw0rd1');
+      expect(res3, isA<Failure>());
+    });
+
+    test('createSystemUser rejects disallowed shells', () async {
+      final res = await controller.createSystemUser(
+        'sess-1',
+        'charlie',
+        'P@ssw0rd1',
+        shell: '/bin/bash; rm -rf /',
+      );
+      expect(res, isA<Failure>());
+      expect((res as Failure).message, contains('Disallowed shell'));
+    });
+
+    test('createSystemUser rejects passwords with newlines or colons', () async {
+      final resNewline = await controller.createSystemUser('sess-1', 'david', 'bad\npassword');
+      expect(resNewline, isA<Failure>());
+      expect((resNewline as Failure).message, contains('line breaks'));
+
+      final resColon = await controller.createSystemUser('sess-1', 'david', 'bad:password');
+      expect(resColon, isA<Failure>());
+      expect((resColon as Failure).message, contains('colon'));
     });
   });
 }

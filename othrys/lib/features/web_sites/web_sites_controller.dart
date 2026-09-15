@@ -64,12 +64,16 @@ class WebSitesController extends StateNotifier<WebSitesState> {
     try {
       final out = await sshManager.executeCommand(sessionId, 'which nginx 2>/dev/null || true');
       hasNginx = out.trim().isNotEmpty;
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('WebSitesController', 'Could not probe nginx: $e');
+    }
 
     try {
       final out = await sshManager.executeCommand(sessionId, 'which certbot 2>/dev/null || true');
       hasCertbot = out.trim().isNotEmpty;
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('WebSitesController', 'Could not probe certbot: $e');
+    }
 
     state = state.copyWith(isNginxInstalled: hasNginx, isCertbotInstalled: hasCertbot);
   }
@@ -134,7 +138,9 @@ class WebSitesController extends StateNotifier<WebSitesState> {
             'test -L /etc/nginx/sites-enabled/$file && echo "YES" || true',
           );
           isEnabled = symlinkCheck.trim() == 'YES';
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.instance.warn('WebSitesController', 'Could not check symlink for $file: $e');
+        }
 
         String content = '';
         try {
@@ -142,7 +148,9 @@ class WebSitesController extends StateNotifier<WebSitesState> {
             sessionId,
             'cat /etc/nginx/sites-available/$file 2>/dev/null || true',
           );
-        } catch (_) {}
+        } catch (e) {
+          AppLogger.instance.warn('WebSitesController', 'Could not read content for $file: $e');
+        }
 
         final isSsl = content.contains('ssl_certificate');
         final isProxy = content.contains('proxy_pass');

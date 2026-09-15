@@ -9,6 +9,7 @@ import '../../../app/theme/app_icons.dart';
 import '../../../app/theme/app_spacing.dart';
 import '../../../app/theme/app_typography.dart';
 import '../../../core/l10n/l10n.dart';
+import '../../../core/security/command_sanitizer.dart';
 import '../../../core/utils/logger.dart';
 import '../../servers/server_controller.dart';
 import '../../terminal/widgets/terminal_tab_view.dart';
@@ -126,7 +127,8 @@ class _SftpEmbeddedTerminalState extends ConsumerState<SftpEmbeddedTerminal> {
     final target = widget.currentPath.isEmpty || widget.currentPath == '.' ? '/' : widget.currentPath;
     Future.delayed(const Duration(milliseconds: 300), () {
       try {
-        session.stdin.add(utf8.encode('cd "$target"\n'));
+        final safeTarget = CommandSanitizer.sanitizePath(target);
+        session.stdin.add(utf8.encode('cd -- $safeTarget\n'));
         _focusNode.requestFocus();
       } catch (e) {
         AppLogger.instance.warn('SftpEmbeddedTerminal', 'Failed to cd: $e');
@@ -138,7 +140,9 @@ class _SftpEmbeddedTerminalState extends ConsumerState<SftpEmbeddedTerminal> {
     _terminal.eraseDisplay();
     try {
       _sshSession?.stdin.add(utf8.encode('clear\n'));
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('SftpEmbeddedTerminal', 'Failed to send clear command: $e');
+    }
     _focusNode.requestFocus();
   }
 

@@ -84,7 +84,9 @@ class DatabasesController extends StateNotifier<DatabasesState> {
         'which mysql 2>/dev/null || which mariadb 2>/dev/null || true',
       );
       hasMysql = mysqlCheck.trim().isNotEmpty;
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('DatabasesController', 'Could not probe MySQL/MariaDB: $e');
+    }
 
     try {
       final pgCheck = await sshManager.executeCommand(
@@ -92,7 +94,9 @@ class DatabasesController extends StateNotifier<DatabasesState> {
         'which psql 2>/dev/null || true',
       );
       hasPg = pgCheck.trim().isNotEmpty;
-    } catch (_) {}
+    } catch (e) {
+      AppLogger.instance.warn('DatabasesController', 'Could not probe PostgreSQL: $e');
+    }
 
     final defaultEngine = hasMysql ? DatabaseEngineType.mysql : (hasPg ? DatabaseEngineType.postgres : state.selectedEngine);
 
@@ -346,7 +350,7 @@ class DatabasesController extends StateNotifier<DatabasesState> {
       final sanitizedHost = CommandSanitizer.sanitizeIdentifier(host.replaceAll('%', '_wildcard_')).replaceAll('_wildcard_', '%');
 
       if (state.selectedEngine == DatabaseEngineType.mysql) {
-        final escapedPass = password.replaceAll("'", "''");
+        final escapedPass = password.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
         final createQuery = "CREATE USER '$sanitizedUser'@'$sanitizedHost' IDENTIFIED BY '$escapedPass';";
         await sshManager.executeSafeCommand(
           sessionId,
@@ -364,7 +368,7 @@ class DatabasesController extends StateNotifier<DatabasesState> {
           );
         }
       } else {
-        final escapedPass = password.replaceAll("'", "''");
+        final escapedPass = password.replaceAll(r'\', r'\\').replaceAll("'", "''");
         final createQuery = "CREATE USER \"$sanitizedUser\" WITH PASSWORD '$escapedPass';";
         await sshManager.executeSafeCommand(
           sessionId,

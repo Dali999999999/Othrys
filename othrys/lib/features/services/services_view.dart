@@ -30,6 +30,8 @@ class _ServicesViewState extends ConsumerState<ServicesView> {
     'ssh',
     'networking',
     'systemd-resolved',
+    'systemd-networkd',
+    'NetworkManager',
     'firewalld',
   };
 

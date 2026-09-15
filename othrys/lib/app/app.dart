@@ -22,6 +22,7 @@ import '../features/settings/settings_view.dart';
 import '../features/splash/splash_screen.dart';
 import '../core/services/settings_service.dart';
 import '../core/services/app_update_service.dart';
+import '../core/network/ssh_session_manager.dart';
 import '../shared/widgets/app_update_banner.dart';
 import '../core/l10n/l10n.dart';
 
@@ -159,6 +160,7 @@ class MainShellView extends ConsumerStatefulWidget {
 
 class _MainShellViewState extends ConsumerState<MainShellView> {
   AppTab _selectedTab = AppTab.servers;
+  late final SSHSessionManager _sshManager;
 
   @override
   void initState() {
@@ -166,6 +168,58 @@ class _MainShellViewState extends ConsumerState<MainShellView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(appUpdateServiceProvider.notifier).checkForUpdate();
     });
+
+    _sshManager = ref.read(sshSessionManagerProvider);
+    _sshManager.onHostKeyPrompt = (server, fingerprint) async {
+      if (!mounted) return false;
+      return await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogCtx) => ContentDialog(
+          title: const Text('SSH Host Key Verification'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('The authenticity of host "${server.host}:${server.port}" cannot be established.'),
+              const SizedBox(height: 8),
+              const Text('Presented Fingerprint (SHA-256):', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: SelectableText(
+                  fingerprint,
+                  style: const TextStyle(fontFamily: 'JetBrainsMono', fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Do you trust this remote server key and want to continue connecting?'),
+            ],
+          ),
+          actions: [
+            Button(
+              child: const Text('Reject & Abort'),
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
+            ),
+            FilledButton(
+              child: const Text('Trust & Connect'),
+              onPressed: () => Navigator.of(dialogCtx).pop(true),
+            ),
+          ],
+        ),
+      ) ?? false;
+    };
+  }
+
+  @override
+  void dispose() {
+    _sshManager.onHostKeyPrompt = null;
+    super.dispose();
   }
 
   void _navigateToTab(AppTab tab) {
