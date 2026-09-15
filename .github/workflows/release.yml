@@ -49,7 +49,13 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path "..\dist" -Force | Out-Null
-          Copy-Item "build\windows\x64\runner\Release\vpsmanager.exe" "build\windows\x64\runner\Release\othrys.exe" -Force
+          if (Test-Path "build\windows\x64\runner\Release\vpsmanager.exe") {
+              Copy-Item "build\windows\x64\runner\Release\vpsmanager.exe" "build\windows\x64\runner\Release\othrys.exe" -Force
+          }
+          if (-not (Test-Path "build\windows\x64\runner\Release\othrys.exe")) {
+              Write-Error "Binary build\windows\x64\runner\Release\othrys.exe was not found after flutter build."
+              exit 1
+          }
           $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) {
               $iscc = "C:\Program Files\Inno Setup 6\ISCC.exe"
