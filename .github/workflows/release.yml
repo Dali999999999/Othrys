@@ -236,10 +236,27 @@ jobs:
           }
           EOF
 
+      - name: Clean Existing Release Assets If Present
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.TAG }}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG exists. Deleting stale assets to force clean replacement..."
+            ASSETS=$(gh release view "$TAG" --json assets -q '.assets[].name')
+            for asset in $ASSETS; do
+              echo "Removing stale asset: $asset"
+              gh release delete-asset "$TAG" "$asset" -y || true
+            done
+          else
+            echo "Release $TAG does not exist yet. It will be created."
+          fi
+
       - name: Create or Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.TAG }}
+          target_commitish: ${{ github.sha }}
           name: "Othrys ${{ steps.version.outputs.TAG }}"
           body: |
             ## 🚀 Othrys ${{ steps.version.outputs.TAG }} Multi-Platform Release
